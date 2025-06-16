@@ -124,8 +124,52 @@ export default class RaceScene extends Phaser.Scene {
             fill: '#ffffff'
         });
         
+        // Click frequency meter
+        this.frequencyMeter = this.add.rectangle(10, 130, 100, 15, 0x333333);
+        this.frequencyBar = this.add.rectangle(10, 130, 0, 11, 0x00ffff);
+        this.frequencyBar.setOrigin(0, 0.5);
+        
+        this.add.text(10, 150, 'Click Frequency', {
+            font: '10px Arial',
+            fill: '#ffffff'
+        });
+        
+        // Click rate meter
+        this.rateMeter = this.add.rectangle(10, 170, 100, 15, 0x333333);
+        this.rateBar = this.add.rectangle(10, 170, 50, 11, 0xffff00);
+        this.rateBar.setOrigin(0, 0.5);
+        
+        this.add.text(10, 190, 'Click Rate', {
+            font: '10px Arial',
+            fill: '#ffffff'
+        });
+        
+        // Speed multiplier display
+        this.speedMultiplierText = this.add.text(10, 210, 'Speed: 1.0x', {
+            font: '12px Arial',
+            fill: '#ffffff',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 3 }
+        });
+        
+        // Miss tap counter
+        this.missTapText = this.add.text(10, 235, 'Miss Taps: 0', {
+            font: '12px Arial',
+            fill: '#ff6666',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 3 }
+        });
+        
+        // Accuracy display
+        this.accuracyText = this.add.text(10, 260, 'Accuracy: 100%', {
+            font: '12px Arial',
+            fill: '#66ff66',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 3 }
+        });
+        
         // Instructions
-        this.instructionText = this.add.text(400, 550, 'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim! Stop tapping = slow down!', {
+        this.instructionText = this.add.text(400, 550, 'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim! Click faster = swim faster!', {
             font: '16px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -211,12 +255,60 @@ export default class RaceScene extends Phaser.Scene {
             this.momentumBar.width = Math.max(0, momentumWidth);
             
             // Color based on momentum level
-            if (player.momentum > 100) {
+            if (player.momentum > 130) {
                 this.momentumBar.setFillStyle(0x00ff00); // Green - high momentum
-            } else if (player.momentum > 50) {
+            } else if (player.momentum > 70) {
                 this.momentumBar.setFillStyle(0xffff00); // Yellow - medium momentum
             } else {
                 this.momentumBar.setFillStyle(0xff0000); // Red - low momentum
+            }
+            
+            // Update click frequency bar
+            const frequencyWidth = (player.frequencySpeedMultiplier - 1.0) / 0.5 * 80; // 0.5 is max bonus
+            this.frequencyBar.width = Math.max(0, Math.min(80, frequencyWidth));
+            
+            // Update click rate bar (centered at 50, showing deviation from 1.0x)
+            const rateDeviation = player.clickRateMultiplier - 1.0; // -0.5 to +1.0 range
+            const rateWidth = Math.abs(rateDeviation) * 40; // Scale to bar width
+            this.rateBar.width = Math.max(5, Math.min(80, rateWidth + 20));
+            
+            // Color rate bar based on performance
+            if (player.clickRateMultiplier > 1.2) {
+                this.rateBar.setFillStyle(0x00ff00); // Green - fast clicking bonus
+            } else if (player.clickRateMultiplier > 0.9) {
+                this.rateBar.setFillStyle(0xffff00); // Yellow - normal rate
+            } else {
+                this.rateBar.setFillStyle(0xff0000); // Red - slow clicking penalty
+            }
+            
+            // Update speed multiplier text
+            const totalMultiplier = player.frequencySpeedMultiplier * player.clickRateMultiplier;
+            this.speedMultiplierText.setText(`Speed: ${totalMultiplier.toFixed(1)}x`);
+            
+            // Color speed multiplier text
+            if (totalMultiplier > 1.5) {
+                this.speedMultiplierText.setFill('#00ff00'); // Green - high speed
+            } else if (totalMultiplier > 1.0) {
+                this.speedMultiplierText.setFill('#ffff00'); // Yellow - bonus speed
+            } else {
+                this.speedMultiplierText.setFill('#ff0000'); // Red - penalty speed
+            }
+            
+            // Update miss tap counter
+            this.missTapText.setText(`Miss Taps: ${player.missTapCount}`);
+            
+            // Update accuracy display
+            const accuracy = player.totalTapCount > 0 ? 
+                ((player.totalTapCount - player.missTapCount) / player.totalTapCount * 100) : 100;
+            this.accuracyText.setText(`Accuracy: ${accuracy.toFixed(0)}%`);
+            
+            // Color accuracy text
+            if (accuracy >= 90) {
+                this.accuracyText.setFill('#00ff00'); // Green - excellent
+            } else if (accuracy >= 75) {
+                this.accuracyText.setFill('#ffff00'); // Yellow - good
+            } else {
+                this.accuracyText.setFill('#ff0000'); // Red - poor
             }
             
             // Update next key indicator

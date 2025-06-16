@@ -11,8 +11,8 @@ export default class Swimmer {
         this.speed = 0;
         this.baseSpeed = 100;
         this.momentum = 0; // Current forward momentum
-        this.maxMomentum = 150; // Maximum momentum from alternating taps
-        this.momentumDecay = 50; // Momentum lost per second when not tapping
+        this.maxMomentum = 200; // Increased maximum momentum for faster speeds
+        this.momentumDecay = 30; // Reduced momentum decay for more forgiving system
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
         this.hasStartedSwimming = false;
@@ -22,6 +22,22 @@ export default class Swimmer {
         this.position = 0; // Distance swum
         this.finished = false;
         this.finishTime = 0;
+        
+        // Click frequency tracking (Option B)
+        this.clickHistory = []; // Store timestamps of recent clicks
+        this.clickFrequencyWindow = 2000; // Track clicks over last 2 seconds
+        this.maxClickFrequency = 10; // Maximum clicks per second for bonus calculation
+        this.frequencySpeedMultiplier = 1.0; // Speed multiplier based on click frequency
+        
+        // Recent click rate tracking (Option C)
+        this.recentClickTimes = []; // Store last 5 click times for rate calculation
+        this.maxRecentClicks = 5; // Number of recent clicks to track
+        this.baseClickRate = 2.0; // Expected clicks per second for normal speed
+        this.clickRateMultiplier = 1.0; // Speed multiplier based on recent click rate
+        
+        // Miss tap tracking
+        this.missTapCount = 0; // Track number of wrong key presses
+        this.totalTapCount = 0; // Track total taps for accuracy calculation
         
         // AI properties
         this.aiSkill = isPlayer ? 1.0 : Phaser.Math.FloatBetween(0.7, 0.9);
@@ -82,9 +98,14 @@ export default class Swimmer {
                 this.speed = 0;
                 this.momentum = 0;
             } else {
+                // Update click frequency tracking
+                this.updateClickFrequency(time);
+                
                 // Decay momentum over time when not tapping
                 this.momentum = Math.max(0, this.momentum - this.momentumDecay * (delta / 1000));
-                this.speed = this.momentum;
+                
+                // Calculate speed with frequency and click rate multipliers
+                this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier;
             }
         } else {
             // AI uses old rhythm system
@@ -134,6 +155,58 @@ export default class Swimmer {
         this.rightArm.y += deltaY;
     }
     
+    // Option B: Update click frequency tracking
+    updateClickFrequency(currentTime) {
+        if (!this.isPlayer) return;
+        
+        // Remove old clicks outside the tracking window
+        this.clickHistory = this.clickHistory.filter(clickTime => 
+            currentTime - clickTime <= this.clickFrequencyWindow
+        );
+        
+        // Calculate clicks per second over the tracking window
+        const clicksInWindow = this.clickHistory.length;
+        const windowSeconds = this.clickFrequencyWindow / 1000;
+        const clicksPerSecond = clicksInWindow / windowSeconds;
+        
+        // Calculate frequency speed multiplier with diminishing returns
+        const frequencyRatio = Math.min(clicksPerSecond / this.maxClickFrequency, 1.0);
+        // Use square root for diminishing returns on frequency bonus
+        const diminishedRatio = Math.sqrt(frequencyRatio);
+        this.frequencySpeedMultiplier = 1.0 + (diminishedRatio * 0.4); // Up to 40% speed bonus with diminishing returns
+    }
+    
+    // Option C: Calculate click rate multiplier based on recent clicks
+    updateClickRateMultiplier(currentTime) {
+        if (!this.isPlayer || this.recentClickTimes.length < 2) {
+            this.clickRateMultiplier = 1.0;
+            return;
+        }
+        
+        // Calculate average time between recent clicks
+        let totalTimeBetweenClicks = 0;
+        for (let i = 1; i < this.recentClickTimes.length; i++) {
+            totalTimeBetweenClicks += this.recentClickTimes[i] - this.recentClickTimes[i - 1];
+        }
+        
+        const avgTimeBetweenClicks = totalTimeBetweenClicks / (this.recentClickTimes.length - 1);
+        const avgClicksPerSecond = 1000 / avgTimeBetweenClicks; // Convert ms to clicks/second
+        
+        // Calculate multiplier based on how click rate compares to base rate
+        const rateRatio = avgClicksPerSecond / this.baseClickRate;
+        
+        // Apply multiplier with diminishing returns for faster clicking
+        if (rateRatio >= 1.0) {
+            // Faster clicking gets bonus but with diminishing returns
+            // Use logarithmic scaling to reduce effectiveness of very fast clicking
+            const bonusRatio = Math.log(rateRatio) / Math.log(3); // Diminishing returns curve
+            this.clickRateMultiplier = Math.min(1.0 + (bonusRatio * 0.5), 1.8); // Max 1.8x instead of 2x
+        } else {
+            // Slower clicking gets penalty (down to 0.5x speed for very slow clicking)
+            this.clickRateMultiplier = Math.max(0.5 + (rateRatio * 0.5), 0.5);
+        }
+    }
+    
     stroke(time, keyPressed = null) {
         const timeSinceLastStroke = time - this.lastStrokeTime;
         this.lastStrokeTime = time;
@@ -152,19 +225,34 @@ export default class Swimmer {
         let wasCorrectKey = false;
         let momentumGain = 0;
         
+        // Record click for frequency tracking (Option B)
+        if (this.isPlayer && keyPressed) {
+            this.totalTapCount++; // Count all taps for accuracy tracking
+            this.clickHistory.push(time);
+            
+            // Record click for recent rate tracking (Option C)
+            this.recentClickTimes.push(time);
+            if (this.recentClickTimes.length > this.maxRecentClicks) {
+                this.recentClickTimes.shift(); // Remove oldest click
+            }
+            
+            // Update click rate multiplier
+            this.updateClickRateMultiplier(time);
+        }
+        
         // Check if this is the correct alternating key
         if (keyPressed === this.expectedNextKey) {
             // Correct alternation - add momentum
             wasCorrectKey = true;
             momentumGain = 40; // Base momentum gain per correct stroke
             
-            // Timing bonus for good rhythm (300-600ms)
+            // Timing bonus for good rhythm (200-800ms for more forgiving timing)
             if (this.strokeCount > 1) {
-                if (timeSinceLastStroke >= 300 && timeSinceLastStroke <= 600) {
+                if (timeSinceLastStroke >= 200 && timeSinceLastStroke <= 800) {
                     momentumGain += 20; // Bonus for good timing
-                } else if (timeSinceLastStroke < 300) {
-                    momentumGain -= 10; // Penalty for too fast
-                } else if (timeSinceLastStroke > 1000) {
+                } else if (timeSinceLastStroke < 200) {
+                    momentumGain += 10; // Small bonus for very fast clicking
+                } else if (timeSinceLastStroke > 1200) {
                     momentumGain -= 15; // Penalty for too slow
                 }
             }
@@ -174,9 +262,10 @@ export default class Swimmer {
             this.expectedNextKey = keyPressed === 'left' ? 'right' : 'left';
             
         } else {
-            // Wrong key - no momentum gain, lose some momentum
+            // Wrong key - HIGH PENALTY for miss tapping
             wasCorrectKey = false;
-            this.momentum = Math.max(0, this.momentum - 20);
+            this.missTapCount++; // Track miss taps
+            this.momentum = Math.max(0, this.momentum - 60); // Increased penalty from 20 to 60
             // Don't update expected key - they need to press the correct one
         }
         
@@ -192,25 +281,25 @@ export default class Swimmer {
             ease: 'Power2'
         });
         
-        // Add feedback effect
-        const feedbackCircle = this.scene.add.circle(this.x, this.y - 20, 8, strokeColor);
-        
-        let feedbackText = wasCorrectKey ? 'STROKE!' : 'WRONG!';
-        const textFeedback = this.scene.add.text(this.x, this.y - 35, feedbackText, {
-            font: 'bold 12px Arial',
-            fill: wasCorrectKey ? '#00ff00' : '#ff0000'
-        }).setOrigin(0.5);
-        
-        this.scene.tweens.add({
-            targets: [feedbackCircle, textFeedback],
-            alpha: 0,
-            y: this.y - 50,
-            duration: 800,
-            onComplete: () => {
-                feedbackCircle.destroy();
-                textFeedback.destroy();
-            }
-        });
+        // Add feedback effect - only show visual indicator for miss taps
+        if (!wasCorrectKey) {
+            const missIndicator = this.scene.add.text(this.x, this.y - 25, '✗ MISS!', {
+                font: 'bold 14px Arial',
+                fill: '#ff0000',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5);
+            
+            this.scene.tweens.add({
+                targets: missIndicator,
+                alpha: 0,
+                y: this.y - 45,
+                duration: 1000,
+                onComplete: () => {
+                    missIndicator.destroy();
+                }
+            });
+        }
         
         return wasCorrectKey ? 1.0 : 0;
     }

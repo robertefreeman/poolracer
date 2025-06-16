@@ -84,6 +84,22 @@ export default class ResultsScene extends Phaser.Scene {
                 font: '14px Arial',
                 fill: '#aaaaaa'
             });
+            
+            // Add miss tap count and accuracy for player
+            if (isPlayer) {
+                const accuracy = result.swimmer.totalTapCount > 0 ? 
+                    ((result.swimmer.totalTapCount - result.swimmer.missTapCount) / result.swimmer.totalTapCount * 100) : 100;
+                
+                this.add.text(620, y, `${result.swimmer.missTapCount} misses`, {
+                    font: '14px Arial',
+                    fill: '#ff6666'
+                });
+                
+                this.add.text(720, y + 20, `${accuracy.toFixed(0)}% accuracy`, {
+                    font: '12px Arial',
+                    fill: accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000'
+                });
+            }
         });
     }
 
@@ -130,19 +146,24 @@ export default class ResultsScene extends Phaser.Scene {
     }
 
     getPerformanceAnalysis(swimmer) {
-        const avgRhythm = swimmer.rhythmMultiplier;
         const strokeEfficiency = 25 / swimmer.strokeCount; // meters per stroke
+        const accuracy = swimmer.totalTapCount > 0 ? 
+            ((swimmer.totalTapCount - swimmer.missTapCount) / swimmer.totalTapCount * 100) : 100;
 
         let analysis = '';
         
-        if (avgRhythm > 1.1) {
-            analysis += 'Excellent rhythm! ';
-        } else if (avgRhythm > 0.9) {
-            analysis += 'Good rhythm. ';
+        // Accuracy feedback
+        if (accuracy >= 95) {
+            analysis += 'Perfect accuracy! ';
+        } else if (accuracy >= 85) {
+            analysis += 'Great accuracy. ';
+        } else if (accuracy >= 70) {
+            analysis += 'Good accuracy, but watch your timing. ';
         } else {
-            analysis += 'Work on your stroke timing. ';
+            analysis += 'Focus on alternating keys correctly. ';
         }
 
+        // Stroke efficiency feedback
         if (strokeEfficiency > 1.2) {
             analysis += 'Very efficient strokes!';
         } else if (strokeEfficiency > 0.8) {
