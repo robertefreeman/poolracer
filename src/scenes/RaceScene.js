@@ -125,7 +125,7 @@ export default class RaceScene extends Phaser.Scene {
         });
         
         // Instructions
-        this.instructionText = this.add.text(400, 550, 'Use LEFT/RIGHT arrows alternately to swim!', {
+        this.instructionText = this.add.text(400, 550, 'Alternate LEFT/RIGHT arrows (300-600ms timing) for best speed!', {
             font: '16px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -215,9 +215,15 @@ export default class RaceScene extends Phaser.Scene {
         }
         
         // Swimming strokes
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.left) || 
-            Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
-            const quality = player.stroke(time);
+        let keyPressed = null;
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
+            keyPressed = 'left';
+        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
+            keyPressed = 'right';
+        }
+        
+        if (keyPressed) {
+            const quality = player.stroke(time, keyPressed);
             
             // Visual feedback
             if (quality > 0.8) {

@@ -14,6 +14,8 @@ export default class Swimmer {
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
         this.hasStartedSwimming = false;
+        this.lastStrokeKey = null; // Track last key pressed for alternation
+        this.consecutiveBadTiming = 0;
         this.position = 0; // Distance swum
         this.finished = false;
         this.finishTime = 0;
@@ -125,7 +127,7 @@ export default class Swimmer {
         this.rightArm.y += deltaY;
     }
     
-    stroke(time) {
+    stroke(time, keyPressed = null) {
         const timeSinceLastStroke = time - this.lastStrokeTime;
         this.lastStrokeTime = time;
         this.strokeCount++;
@@ -139,19 +141,66 @@ export default class Swimmer {
             }
         }
         
-        // Calculate rhythm quality (ideal timing is around 800ms)
-        const idealTiming = 800;
-        const timingDiff = Math.abs(timeSinceLastStroke - idealTiming);
-        const rhythmQuality = Math.max(0.5, 1.0 - (timingDiff / 1000));
+        let rhythmQuality = 1.0;
         
-        // Update rhythm multiplier
+        // Only calculate timing for strokes after the first
+        if (this.strokeCount > 1) {
+            // Ideal timing is faster: 300-600ms for good rhythm
+            const idealMinTiming = 300;
+            const idealMaxTiming = 600;
+            
+            let timingQuality = 1.0;
+            if (timeSinceLastStroke < idealMinTiming) {
+                // Too fast - penalize
+                timingQuality = Math.max(0.3, timeSinceLastStroke / idealMinTiming);
+            } else if (timeSinceLastStroke > idealMaxTiming) {
+                // Too slow - penalize more gradually
+                const slownessPenalty = Math.min(1.0, (timeSinceLastStroke - idealMaxTiming) / 1000);
+                timingQuality = Math.max(0.4, 1.0 - slownessPenalty);
+            }
+            
+            // Check for alternating keys (for player)
+            let alternationBonus = 1.0;
+            if (this.isPlayer && keyPressed && this.lastStrokeKey) {
+                if (keyPressed !== this.lastStrokeKey) {
+                    alternationBonus = 1.2; // 20% bonus for alternating
+                    this.consecutiveBadTiming = Math.max(0, this.consecutiveBadTiming - 1);
+                } else {
+                    alternationBonus = 0.7; // Penalty for same key
+                    this.consecutiveBadTiming++;
+                }
+            }
+            
+            rhythmQuality = timingQuality * alternationBonus;
+            
+            // Track consecutive bad timing
+            if (rhythmQuality < 0.6) {
+                this.consecutiveBadTiming++;
+            } else {
+                this.consecutiveBadTiming = Math.max(0, this.consecutiveBadTiming - 1);
+            }
+        }
+        
+        // Update rhythm multiplier with smoother changes
+        const rhythmChange = (rhythmQuality - 0.8) * 0.15; // Smaller, smoother changes
         this.rhythmMultiplier = Phaser.Math.Clamp(
-            this.rhythmMultiplier + (rhythmQuality - 0.8) * 0.3,
-            0.5,
-            1.3
+            this.rhythmMultiplier + rhythmChange,
+            0.3,
+            1.5
         );
         
+        // Penalty for consecutive bad timing
+        if (this.consecutiveBadTiming > 3) {
+            this.rhythmMultiplier *= 0.95;
+        }
+        
+        // Store last key for alternation checking
+        if (keyPressed) {
+            this.lastStrokeKey = keyPressed;
+        }
+        
         // Visual feedback for stroke
+        const strokeColor = rhythmQuality > 0.8 ? 0x00ff00 : rhythmQuality > 0.6 ? 0xffff00 : 0xff6666;
         this.scene.tweens.add({
             targets: this.body,
             scaleX: 1.2,
@@ -160,6 +209,18 @@ export default class Swimmer {
             yoyo: true,
             ease: 'Power2'
         });
+        
+        // Add rhythm feedback effect
+        if (this.isPlayer) {
+            const feedbackCircle = this.scene.add.circle(this.x, this.y - 20, 8, strokeColor);
+            this.scene.tweens.add({
+                targets: feedbackCircle,
+                alpha: 0,
+                y: this.y - 40,
+                duration: 500,
+                onComplete: () => feedbackCircle.destroy()
+            });
+        }
         
         return rhythmQuality;
     }
