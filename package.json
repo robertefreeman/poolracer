@@ -4,16 +4,16 @@
   "description": "NVSL Champions: Rolling Hills Rising - A 2D swimming race game",
   "main": "src/main.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "deploy": "wrangler pages deploy dist"
+    "dev": "wrangler dev",
+    "build": "mkdir -p dist && cp -r index.html src dist/",
+    "preview": "wrangler dev --local",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "phaser": "^3.80.1"
+    "phaser": "^3.80.1",
+    "@cloudflare/kv-asset-handler": "^0.3.0"
   },
   "devDependencies": {
-    "vite": "^5.0.0",
     "wrangler": "^3.0.0"
   }
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Deployment script for Cloudflare Pages with Workers
-echo "🏊‍♂️ Deploying NVSL Swimming Game to Cloudflare Pages..."
+# Deployment script for Cloudflare Workers
+echo "🏊‍♂️ Deploying NVSL Swimming Game to Cloudflare Workers..."
 
 # Check if wrangler is installed
 if ! command -v wrangler &> /dev/null; then
@@ -16,10 +16,15 @@ if ! wrangler whoami &> /dev/null; then
     wrangler login
 fi
 
-# Deploy to Cloudflare Pages
-echo "🚀 Deploying to Cloudflare Pages..."
-wrangler pages deploy . --project-name=nvsl-swimming-game --compatibility-date=2024-01-01
+# Prepare dist directory
+echo "📁 Preparing assets..."
+mkdir -p dist
+cp -r index.html src dist/
+
+# Deploy to Cloudflare Workers
+echo "🚀 Deploying to Cloudflare Workers..."
+wrangler deploy
 
 echo "✅ Deployment complete!"
-echo "🌐 Your game will be available at: https://nvsl-swimming-game.pages.dev"
-echo "📊 Check deployment status at: https://dash.cloudflare.com/pages"
+echo "🌐 Your game will be available at: https://nvsl-swimming-game.your-subdomain.workers.dev"
+echo "📊 Check deployment status at: https://dash.cloudflare.com/workers"

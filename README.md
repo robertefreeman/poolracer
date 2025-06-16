@@ -33,10 +33,10 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
 
 2. Open your browser to `http://localhost:8080`
 
-## Deployment to Cloudflare Pages
+## Deployment to Cloudflare Workers
 
 ### Automatic Deployment (Recommended)
-The repository is configured for automatic deployment to Cloudflare Pages via GitHub Actions:
+The repository is configured for automatic deployment to Cloudflare Workers via GitHub Actions:
 
 1. **Set up Cloudflare secrets** in your GitHub repository:
    - Go to Settings → Secrets and variables → Actions
@@ -46,9 +46,9 @@ The repository is configured for automatic deployment to Cloudflare Pages via Gi
 2. **Push to main branch** - deployment happens automatically!
 
 ### Manual Deployment
-1. Install Wrangler CLI (if not already installed):
+1. Install dependencies:
    ```bash
-   npm install -g wrangler
+   npm install
    ```
 
 2. Run the deployment script:
@@ -58,10 +58,16 @@ The repository is configured for automatic deployment to Cloudflare Pages via Gi
 
    Or deploy manually:
    ```bash
-   wrangler pages deploy . --project-name=nvsl-swimming-game
+   npm run deploy
    ```
 
-3. **Your game will be live at**: `https://nvsl-swimming-game.pages.dev`
+3. **Your game will be live at**: `https://nvsl-swimming-game.your-subdomain.workers.dev`
+
+### Local Development with Workers
+```bash
+npm run dev          # Start Wrangler dev server
+npm run preview      # Preview locally
+```
 
 ## Game Mechanics
 
@@ -91,8 +97,10 @@ The repository is configured for automatic deployment to Cloudflare Pages via Gi
 │   │   └── ResultsScene.js # Race results and analysis
 │   └── sprites/
 │       └── Swimmer.js      # Swimmer class with AI and player logic
+├── worker.js               # Cloudflare Worker script
 ├── wrangler.toml           # Cloudflare Workers configuration
 ├── deploy.sh               # Deployment script
+├── dist/                   # Built assets directory
 └── README.md               # This file
 ```
 
@@ -101,7 +109,7 @@ The repository is configured for automatic deployment to Cloudflare Pages via Gi
 - **Framework**: Phaser 3.80.1 (loaded from CDN)
 - **Physics**: Arcade physics with custom swimming mechanics
 - **Graphics**: Shape-based rendering (no sprite assets needed)
-- **Hosting**: Cloudflare Pages with Workers integration
+- **Hosting**: Cloudflare Workers with static asset handling
 - **No Dependencies**: Runs directly in browser with CDN-loaded Phaser
 
 ## Future Enhancements
