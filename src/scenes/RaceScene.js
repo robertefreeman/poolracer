@@ -257,6 +257,14 @@ export default class RaceScene extends Phaser.Scene {
             padding: { x: 5, y: 3 }
         });
         
+        // Speed penalty display
+        this.speedPenaltyText = this.add.text(10, 310, 'Penalty: None', {
+            font: '12px Arial',
+            fill: '#ffffff',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 3 }
+        });
+        
         // Instructions (adapt for mobile)
         const instructionText = this.isMobile ? 
             'TAP DIVE button, then alternate LEFT/RIGHT buttons to swim!' :
@@ -376,7 +384,7 @@ export default class RaceScene extends Phaser.Scene {
             }
             
             // Update speed multiplier text
-            const totalMultiplier = player.frequencySpeedMultiplier * player.clickRateMultiplier;
+            const totalMultiplier = player.frequencySpeedMultiplier * player.clickRateMultiplier * player.diveBonus * player.speedPenaltyMultiplier;
             this.speedMultiplierText.setText(`Speed: ${totalMultiplier.toFixed(1)}x`);
             
             // Color speed multiplier text
@@ -419,6 +427,16 @@ export default class RaceScene extends Phaser.Scene {
                 this.diveBonusText.setFill('#ffff00'); // Yellow - small bonus
             } else {
                 this.diveBonusText.setFill('#ffffff'); // White - no bonus
+            }
+            
+            // Update speed penalty display
+            if (player.speedPenaltyTimer > 0) {
+                const penaltyTime = (player.speedPenaltyTimer / 1000).toFixed(1);
+                this.speedPenaltyText.setText(`Penalty: ${penaltyTime}s (${(player.speedPenaltyMultiplier * 100).toFixed(0)}%)`);
+                this.speedPenaltyText.setFill('#ff6600');
+            } else {
+                this.speedPenaltyText.setText('Penalty: None');
+                this.speedPenaltyText.setFill('#ffffff');
             }
             
             // Update next key indicator

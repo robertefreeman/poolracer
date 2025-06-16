@@ -9,10 +9,10 @@ export default class Swimmer {
         
         // Swimming stats
         this.speed = 0;
-        this.baseSpeed = 100;
+        this.baseSpeed = 80; // Reduced from 100 to slow down overall speed
         this.momentum = 0; // Current forward momentum
-        this.maxMomentum = 200; // Increased maximum momentum for faster speeds
-        this.momentumDecay = 30; // Reduced momentum decay for more forgiving system
+        this.maxMomentum = 150; // Reduced from 200 to cap maximum speed
+        this.momentumDecay = 40; // Increased from 30 for faster momentum loss
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
         this.hasStartedSwimming = false;
@@ -26,6 +26,10 @@ export default class Swimmer {
         // Dive timing bonus tracking
         this.diveBonus = 1.0; // Multiplier from dive timing
         this.diveBonusDecayRate = 0.02; // Rate at which dive bonus decays
+        
+        // Miss tap penalty tracking
+        this.speedPenaltyTimer = 0; // Time remaining for speed penalty
+        this.speedPenaltyMultiplier = 1.0; // Speed reduction multiplier
         
         // Click frequency tracking (Option B)
         this.clickHistory = []; // Store timestamps of recent clicks
@@ -116,8 +120,16 @@ export default class Swimmer {
                     this.diveBonus = Math.max(1.0, this.diveBonus - this.diveBonusDecayRate * (delta / 1000));
                 }
                 
-                // Calculate speed with frequency, click rate, and dive bonus multipliers
-                this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier * this.diveBonus;
+                // Handle speed penalty from miss taps
+                if (this.speedPenaltyTimer > 0) {
+                    this.speedPenaltyTimer -= delta;
+                    if (this.speedPenaltyTimer <= 0) {
+                        this.speedPenaltyMultiplier = 1.0; // Reset penalty
+                    }
+                }
+                
+                // Calculate speed with all multipliers including miss tap penalty
+                this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier * this.diveBonus * this.speedPenaltyMultiplier;
             }
         } else {
             // AI uses old rhythm system
@@ -287,7 +299,7 @@ export default class Swimmer {
         const frequencyRatio = Math.min(clicksPerSecond / this.maxClickFrequency, 1.0);
         // Use square root for diminishing returns on frequency bonus
         const diminishedRatio = Math.sqrt(frequencyRatio);
-        this.frequencySpeedMultiplier = 1.0 + (diminishedRatio * 0.4); // Up to 40% speed bonus with diminishing returns
+        this.frequencySpeedMultiplier = 1.0 + (diminishedRatio * 0.3); // Reduced from 40% to 30% max bonus
     }
     
     // Option C: Calculate click rate multiplier based on recent clicks
@@ -314,7 +326,7 @@ export default class Swimmer {
             // Faster clicking gets bonus but with diminishing returns
             // Use logarithmic scaling to reduce effectiveness of very fast clicking
             const bonusRatio = Math.log(rateRatio) / Math.log(3); // Diminishing returns curve
-            this.clickRateMultiplier = Math.min(1.0 + (bonusRatio * 0.5), 1.8); // Max 1.8x instead of 2x
+            this.clickRateMultiplier = Math.min(1.0 + (bonusRatio * 0.4), 1.6); // Reduced max from 1.8x to 1.6x
         } else {
             // Slower clicking gets penalty (down to 0.5x speed for very slow clicking)
             this.clickRateMultiplier = Math.max(0.5 + (rateRatio * 0.5), 0.5);
@@ -358,16 +370,16 @@ export default class Swimmer {
         if (keyPressed === this.expectedNextKey) {
             // Correct alternation - add momentum
             wasCorrectKey = true;
-            momentumGain = 40; // Base momentum gain per correct stroke
+            momentumGain = 30; // Reduced from 40 to slow progression
             
-            // Timing bonus for good rhythm (200-800ms for more forgiving timing)
+            // Timing bonus for good rhythm (250-700ms for tighter timing window)
             if (this.strokeCount > 1) {
-                if (timeSinceLastStroke >= 200 && timeSinceLastStroke <= 800) {
-                    momentumGain += 20; // Bonus for good timing
-                } else if (timeSinceLastStroke < 200) {
-                    momentumGain += 10; // Small bonus for very fast clicking
-                } else if (timeSinceLastStroke > 1200) {
-                    momentumGain -= 15; // Penalty for too slow
+                if (timeSinceLastStroke >= 250 && timeSinceLastStroke <= 700) {
+                    momentumGain += 15; // Reduced bonus from 20 to 15
+                } else if (timeSinceLastStroke < 250) {
+                    momentumGain += 5; // Reduced bonus from 10 to 5
+                } else if (timeSinceLastStroke > 1000) {
+                    momentumGain -= 20; // Increased penalty from 15 to 20
                 }
             }
             
@@ -376,10 +388,15 @@ export default class Swimmer {
             this.expectedNextKey = keyPressed === 'left' ? 'right' : 'left';
             
         } else {
-            // Wrong key - HIGH PENALTY for miss tapping
+            // Wrong key - MASSIVE PENALTY for miss tapping
             wasCorrectKey = false;
             this.missTapCount++; // Track miss taps
-            this.momentum = Math.max(0, this.momentum - 60); // Increased penalty from 20 to 60
+            this.momentum = Math.max(0, this.momentum - 80); // Increased penalty from 60 to 80
+            
+            // Additional speed penalty that persists
+            this.speedPenaltyTimer = 2000; // 2 second speed penalty
+            this.speedPenaltyMultiplier = 0.7; // 30% speed reduction
+            
             // Don't update expected key - they need to press the correct one
         }
         
@@ -428,6 +445,24 @@ export default class Swimmer {
             
             // Screen shake for miss
             this.scene.cameras.main.shake(100, 0.005);
+            
+            // Show speed penalty indicator
+            const penaltyIndicator = this.scene.add.text(this.x, this.y - 50, 'SPEED PENALTY!', {
+                font: 'bold 12px Arial',
+                fill: '#ff6600',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5);
+            
+            this.scene.tweens.add({
+                targets: penaltyIndicator,
+                alpha: 0,
+                y: this.y - 70,
+                duration: 2000,
+                onComplete: () => {
+                    penaltyIndicator.destroy();
+                }
+            });
         } else if (momentumGain > 50) {
             // Show "GOOD!" for excellent strokes
             const goodIndicator = this.scene.add.text(this.x, this.y - 25, 'GOOD!', {
@@ -502,13 +537,13 @@ export default class Swimmer {
             // Mark that player has dived and can now swim
             this.hasDived = true;
             
-            // Calculate initial momentum with timing bonus
-            let baseMomentum = 80;
+            // Calculate initial momentum with timing bonus (reduced base)
+            let baseMomentum = 60; // Reduced from 80 to slow initial start
             if (diveTimingBonus) {
                 baseMomentum = baseMomentum * diveTimingBonus.multiplier;
                 // Store the dive bonus for continued momentum advantage
                 this.diveBonus = diveTimingBonus.multiplier;
-                this.diveBonusDecayRate = 0.02; // Bonus decays by 2% per second
+                this.diveBonusDecayRate = 0.025; // Slightly faster decay from 0.02 to 0.025
             } else {
                 this.diveBonus = 1.0;
             }
