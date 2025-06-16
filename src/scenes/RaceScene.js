@@ -47,31 +47,103 @@ export default class RaceScene extends Phaser.Scene {
         const height = this.cameras.main.height;
         const laneHeight = height / raceConfig.lanes;
         
-        // Draw lane dividers
+        // Enhanced pool background with gradient
+        const poolGradient = this.add.rectangle(width / 2, height / 2, width, height, 0x0066cc);
+        
+        // Add subtle water texture with animated circles
+        this.waterEffects = [];
+        for (let i = 0; i < 15; i++) {
+            const bubble = this.add.circle(
+                Phaser.Math.Between(100, width - 100),
+                Phaser.Math.Between(50, height - 50),
+                Phaser.Math.Between(3, 8),
+                0x87ceeb,
+                0.3
+            );
+            
+            this.waterEffects.push(bubble);
+            
+            // Animate water bubbles
+            this.tweens.add({
+                targets: bubble,
+                y: bubble.y - Phaser.Math.Between(20, 40),
+                alpha: 0,
+                duration: Phaser.Math.Between(3000, 6000),
+                repeat: -1,
+                yoyo: true,
+                ease: 'Sine.easeInOut'
+            });
+        }
+        
+        // Enhanced lane dividers with floating effect
         for (let i = 1; i < raceConfig.lanes; i++) {
             const y = i * laneHeight;
             
-            // Lane rope (dashed line)
+            // Lane rope (animated dashed line)
             for (let x = 0; x < width; x += 20) {
-                this.add.rectangle(x + 10, y, 10, 2, 0xffffff);
+                const rope = this.add.rectangle(x + 10, y, 10, 2, 0xffffff);
+                
+                // Add gentle floating animation
+                this.tweens.add({
+                    targets: rope,
+                    y: y + Math.sin((x / 100) * Math.PI) * 2,
+                    duration: 2000 + (x * 10),
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'Sine.easeInOut'
+                });
             }
         }
         
-        // Pool edges
+        // Pool edges with enhanced styling
         this.add.rectangle(width / 2, 5, width, 10, 0x333333);
         this.add.rectangle(width / 2, height - 5, width, 10, 0x333333);
         
-        // Start and finish lines
-        this.add.rectangle(80, height / 2, 4, height, 0x00ff00); // Start
-        this.add.rectangle(1200, height / 2, 4, height, 0xff0000); // Finish
+        // Enhanced start and finish lines
+        const startLine = this.add.rectangle(80, height / 2, 4, height, 0x00ff00);
+        const finishLine = this.add.rectangle(1200, height / 2, 4, height, 0xff0000);
         
-        // Distance markers
+        // Animated start line glow
+        this.tweens.add({
+            targets: startLine,
+            alpha: 0.6,
+            duration: 1000,
+            repeat: -1,
+            yoyo: true,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Animated finish line glow
+        this.tweens.add({
+            targets: finishLine,
+            alpha: 0.8,
+            scaleX: 1.2,
+            duration: 800,
+            repeat: -1,
+            yoyo: true,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Distance markers with enhanced styling
         for (let i = 1; i < 4; i++) {
             const x = 80 + (i * 280);
-            this.add.rectangle(x, height / 2, 2, height, 0xcccccc);
+            const marker = this.add.rectangle(x, height / 2, 2, height, 0xcccccc);
+            
             this.add.text(x - 10, 10, `${i * 25}m`, {
                 font: '12px Arial',
-                fill: '#ffffff'
+                fill: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 1
+            });
+            
+            // Subtle marker animation
+            this.tweens.add({
+                targets: marker,
+                alpha: 0.7,
+                duration: 1500 + (i * 200),
+                repeat: -1,
+                yoyo: true,
+                ease: 'Sine.easeInOut'
             });
         }
     }
@@ -398,15 +470,111 @@ export default class RaceScene extends Phaser.Scene {
     }
     
     swimmerFinished(swimmer) {
+        const place = this.finishedSwimmers.length + 1;
+        const time = (swimmer.finishTime - this.startTime) / 1000;
+        
         this.finishedSwimmers.push({
             swimmer: swimmer,
-            time: (swimmer.finishTime - this.startTime) / 1000,
-            place: this.finishedSwimmers.length + 1
+            time: time,
+            place: place
         });
+        
+        // Create finish celebration effect
+        this.createFinishCelebration(swimmer, place);
         
         // Check if race is complete
         if (this.finishedSwimmers.length === this.swimmers.length) {
             this.endRace();
+        }
+    }
+    
+    createFinishCelebration(swimmer, place) {
+        // Finish line explosion effect
+        const explosionCount = swimmer.isPlayer ? 20 : 10;
+        
+        for (let i = 0; i < explosionCount; i++) {
+            const particle = this.add.circle(
+                swimmer.x,
+                swimmer.y + Phaser.Math.Between(-15, 15),
+                Phaser.Math.Between(2, 5),
+                place === 1 ? 0xffd700 : (place === 2 ? 0xc0c0c0 : (place === 3 ? 0xcd7f32 : 0x87ceeb)),
+                0.9
+            );
+            
+            this.tweens.add({
+                targets: particle,
+                x: particle.x + Phaser.Math.Between(-50, 50),
+                y: particle.y + Phaser.Math.Between(-30, 30),
+                alpha: 0,
+                scaleX: 0.1,
+                scaleY: 0.1,
+                duration: Phaser.Math.Between(500, 1000),
+                ease: 'Power2.easeOut',
+                onComplete: () => particle.destroy()
+            });
+        }
+        
+        // Place indicator
+        let placeText = '';
+        let placeColor = '#ffffff';
+        
+        switch (place) {
+            case 1:
+                placeText = '🥇 1ST PLACE!';
+                placeColor = '#ffd700';
+                break;
+            case 2:
+                placeText = '🥈 2ND PLACE!';
+                placeColor = '#c0c0c0';
+                break;
+            case 3:
+                placeText = '🥉 3RD PLACE!';
+                placeColor = '#cd7f32';
+                break;
+            default:
+                placeText = `${place}TH PLACE`;
+                placeColor = '#ffffff';
+                break;
+        }
+        
+        const placeIndicator = this.add.text(swimmer.x, swimmer.y - 40, placeText, {
+            font: 'bold 16px Arial',
+            fill: placeColor,
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+        
+        // Animate place indicator
+        this.tweens.add({
+            targets: placeIndicator,
+            y: placeIndicator.y - 20,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 300,
+            ease: 'Back.easeOut'
+        });
+        
+        this.tweens.add({
+            targets: placeIndicator,
+            alpha: 0,
+            duration: 2000,
+            delay: 1500,
+            onComplete: () => placeIndicator.destroy()
+        });
+        
+        // Special effects for player finishing
+        if (swimmer.isPlayer) {
+            // Screen flash
+            const flash = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.3);
+            this.tweens.add({
+                targets: flash,
+                alpha: 0,
+                duration: 400,
+                onComplete: () => flash.destroy()
+            });
+            
+            // Camera shake
+            this.cameras.main.shake(300, 0.01);
         }
     }
     

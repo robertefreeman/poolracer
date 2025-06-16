@@ -68,6 +68,9 @@ export default class Swimmer {
         // Animation state
         this.animFrame = 0;
         this.animTimer = 0;
+        this.strokeAnimationActive = false;
+        this.waterTrail = []; // Store water trail particles
+        this.maxTrailParticles = 8;
     }
     
     update(time, delta) {
@@ -135,15 +138,117 @@ export default class Swimmer {
     updateAnimation(time, delta) {
         this.animTimer += delta;
         
-        if (this.animTimer >= 200) { // 200ms per frame
-            this.animFrame = (this.animFrame + 1) % 4;
+        // Enhanced swimming animation based on speed and stroke type
+        const animSpeed = Math.max(100, 300 - (this.speed * 2)); // Faster animation when swimming faster
+        
+        if (this.animTimer >= animSpeed) {
+            this.animFrame = (this.animFrame + 1) % 8; // More animation frames
             this.animTimer = 0;
             
-            // Simple arm animation
-            const armOffset = Math.sin(this.animFrame * Math.PI / 2) * 3;
-            this.leftArm.y = this.y - 8 + armOffset;
-            this.rightArm.y = this.y + 8 - armOffset;
+            // Enhanced stroke-specific animations
+            this.updateStrokeAnimation();
+            
+            // Create water trail particles when moving
+            if (this.speed > 10) {
+                this.createWaterTrail();
+            }
         }
+        
+        // Update water trail particles
+        this.updateWaterTrail(delta);
+        
+        // Body bobbing animation when swimming
+        if (this.hasDived && this.speed > 0) {
+            const bobOffset = Math.sin(time * 0.008) * 2;
+            this.body.y = this.y + bobOffset;
+            this.head.y = this.y + bobOffset;
+        }
+    }
+    
+    updateStrokeAnimation() {
+        const intensity = Math.min(this.speed / 100, 2.0); // Animation intensity based on speed
+        
+        switch (this.strokeType) {
+            case 'freestyle':
+                // Alternating arm strokes
+                const freestyleOffset = Math.sin(this.animFrame * Math.PI / 4) * (4 + intensity);
+                this.leftArm.y = this.y - 8 + freestyleOffset;
+                this.rightArm.y = this.y + 8 - freestyleOffset;
+                this.leftArm.rotation = Math.sin(this.animFrame * Math.PI / 4) * 0.3;
+                this.rightArm.rotation = -Math.sin(this.animFrame * Math.PI / 4) * 0.3;
+                break;
+                
+            case 'backstroke':
+                // Backward alternating strokes
+                const backstrokeOffset = Math.cos(this.animFrame * Math.PI / 4) * (4 + intensity);
+                this.leftArm.y = this.y - 8 + backstrokeOffset;
+                this.rightArm.y = this.y + 8 - backstrokeOffset;
+                this.leftArm.rotation = Math.cos(this.animFrame * Math.PI / 4) * 0.4;
+                this.rightArm.rotation = -Math.cos(this.animFrame * Math.PI / 4) * 0.4;
+                // Swimmer faces up
+                this.head.setFillStyle(this.isPlayer ? 0xffcc99 : 0x99ccff);
+                break;
+                
+            case 'breaststroke':
+                // Synchronized wide arm movements
+                const breastOffset = Math.sin(this.animFrame * Math.PI / 2) * (6 + intensity);
+                this.leftArm.y = this.y - 10 + breastOffset;
+                this.rightArm.y = this.y + 10 - breastOffset;
+                this.leftArm.width = 8 + Math.abs(breastOffset);
+                this.rightArm.width = 8 + Math.abs(breastOffset);
+                break;
+                
+            case 'butterfly':
+                // Synchronized butterfly strokes
+                const butterflyOffset = Math.sin(this.animFrame * Math.PI / 3) * (5 + intensity);
+                this.leftArm.y = this.y - 8 + butterflyOffset;
+                this.rightArm.y = this.y + 8 + butterflyOffset; // Both arms move together
+                this.leftArm.rotation = Math.sin(this.animFrame * Math.PI / 3) * 0.5;
+                this.rightArm.rotation = Math.sin(this.animFrame * Math.PI / 3) * 0.5;
+                // Body undulation
+                this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 3) * 0.2;
+                break;
+        }
+    }
+    
+    createWaterTrail() {
+        // Create water droplet behind swimmer
+        const trail = this.scene.add.circle(
+            this.x - 15 + Phaser.Math.Between(-3, 3),
+            this.y + Phaser.Math.Between(-8, 8),
+            Phaser.Math.Between(1, 3),
+            0x87ceeb,
+            0.7
+        );
+        
+        this.waterTrail.push({
+            particle: trail,
+            life: 1000, // 1 second lifetime
+            initialAlpha: 0.7
+        });
+        
+        // Remove old particles
+        if (this.waterTrail.length > this.maxTrailParticles) {
+            const oldest = this.waterTrail.shift();
+            oldest.particle.destroy();
+        }
+    }
+    
+    updateWaterTrail(delta) {
+        this.waterTrail.forEach((trail, index) => {
+            trail.life -= delta;
+            
+            if (trail.life <= 0) {
+                trail.particle.destroy();
+                this.waterTrail.splice(index, 1);
+            } else {
+                // Fade out and drift
+                const alpha = (trail.life / 1000) * trail.initialAlpha;
+                trail.particle.setAlpha(alpha);
+                trail.particle.x -= delta * 0.02; // Drift backward
+                trail.particle.y += Math.sin(trail.life * 0.01) * 0.1; // Gentle wave motion
+            }
+        });
     }
     
     updatePosition(x, y) {
@@ -278,19 +383,31 @@ export default class Swimmer {
             // Don't update expected key - they need to press the correct one
         }
         
-        // Visual feedback
-        let strokeColor = wasCorrectKey ? 0x00ff00 : 0xff0000;
+        // Enhanced visual feedback
+        this.createStrokeEffect(wasCorrectKey, momentumGain);
         
+        // Enhanced body animation based on stroke quality
+        const scaleIntensity = wasCorrectKey ? 1.0 + (momentumGain / 100) : 0.8;
         this.scene.tweens.add({
             targets: this.body,
-            scaleX: 1.2,
-            scaleY: 0.8,
-            duration: 100,
+            scaleX: 1.0 + (scaleIntensity * 0.3),
+            scaleY: 1.0 - (scaleIntensity * 0.2),
+            duration: wasCorrectKey ? 150 : 80,
             yoyo: true,
             ease: 'Power2'
         });
         
-        // Add feedback effect - only show visual indicator for miss taps
+        // Arm stroke animation
+        const armToAnimate = keyPressed === 'left' ? this.leftArm : this.rightArm;
+        this.scene.tweens.add({
+            targets: armToAnimate,
+            scaleX: wasCorrectKey ? 1.4 : 0.8,
+            duration: 120,
+            yoyo: true,
+            ease: 'Back.easeOut'
+        });
+        
+        // Add feedback effect for both correct and incorrect strokes
         if (!wasCorrectKey) {
             const missIndicator = this.scene.add.text(this.x, this.y - 25, '✗ MISS!', {
                 font: 'bold 14px Arial',
@@ -307,6 +424,73 @@ export default class Swimmer {
                 onComplete: () => {
                     missIndicator.destroy();
                 }
+            });
+            
+            // Screen shake for miss
+            this.scene.cameras.main.shake(100, 0.005);
+        } else if (momentumGain > 50) {
+            // Show "GOOD!" for excellent strokes
+            const goodIndicator = this.scene.add.text(this.x, this.y - 25, 'GOOD!', {
+                font: 'bold 12px Arial',
+                fill: '#00ff00',
+                stroke: '#000000',
+                strokeThickness: 1
+            }).setOrigin(0.5);
+            
+            this.scene.tweens.add({
+                targets: goodIndicator,
+                alpha: 0,
+                y: this.y - 35,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 800,
+                onComplete: () => {
+                    goodIndicator.destroy();
+                }
+            });
+        }
+    }
+    
+    createStrokeEffect(wasCorrectKey, momentumGain) {
+        if (!wasCorrectKey) return;
+        
+        // Create splash particles for good strokes
+        const particleCount = Math.min(8, Math.floor(momentumGain / 10));
+        
+        for (let i = 0; i < particleCount; i++) {
+            const splash = this.scene.add.circle(
+                this.x + Phaser.Math.Between(-12, 8),
+                this.y + Phaser.Math.Between(-8, 8),
+                Phaser.Math.Between(1, 3),
+                0x87ceeb,
+                0.8
+            );
+            
+            this.scene.tweens.add({
+                targets: splash,
+                x: splash.x + Phaser.Math.Between(-15, 15),
+                y: splash.y + Phaser.Math.Between(-10, 10),
+                alpha: 0,
+                scaleX: 0.2,
+                scaleY: 0.2,
+                duration: Phaser.Math.Between(300, 600),
+                ease: 'Power2.easeOut',
+                onComplete: () => splash.destroy()
+            });
+        }
+        
+        // Create momentum boost effect for excellent strokes
+        if (momentumGain > 50) {
+            const boostRing = this.scene.add.circle(this.x, this.y, 5, 0x00ff00, 0);
+            boostRing.setStrokeStyle(2, 0x00ff00, 0.8);
+            
+            this.scene.tweens.add({
+                targets: boostRing,
+                radius: 25,
+                alpha: 0,
+                duration: 400,
+                ease: 'Power2.easeOut',
+                onComplete: () => boostRing.destroy()
             });
         }
         
@@ -347,30 +531,80 @@ export default class Swimmer {
             ease: 'Power2'
         });
         
-        // Add splash effect for good dives
-        if (diveTimingBonus && diveTimingBonus.multiplier > 1.4) {
-            // Create splash particles
-            for (let i = 0; i < 5; i++) {
-                const splash = this.scene.add.circle(
-                    this.x + Phaser.Math.Between(-10, 10),
-                    this.y + Phaser.Math.Between(-5, 5),
-                    Phaser.Math.Between(2, 4),
-                    0x87ceeb
-                );
+        // Enhanced splash effect for dives
+        this.createDiveSplash(diveTimingBonus);
+    }
+    
+    createDiveSplash(diveTimingBonus) {
+        const splashIntensity = diveTimingBonus ? diveTimingBonus.multiplier : 1.0;
+        const particleCount = Math.floor(5 + (splashIntensity * 8));
+        
+        // Main splash particles
+        for (let i = 0; i < particleCount; i++) {
+            const splash = this.scene.add.circle(
+                this.x + Phaser.Math.Between(-15, 15),
+                this.y + Phaser.Math.Between(-8, 8),
+                Phaser.Math.Between(2, 5),
+                0x87ceeb,
+                0.9
+            );
+            
+            this.scene.tweens.add({
+                targets: splash,
+                x: splash.x + Phaser.Math.Between(-30, 30),
+                y: splash.y + Phaser.Math.Between(-20, 20),
+                alpha: 0,
+                scaleX: 0.1,
+                scaleY: 0.1,
+                duration: Phaser.Math.Between(400, 800),
+                ease: 'Power2.easeOut',
+                onComplete: () => splash.destroy()
+            });
+        }
+        
+        // Water ripples for good dives
+        if (splashIntensity > 1.2) {
+            for (let i = 0; i < 3; i++) {
+                const ripple = this.scene.add.circle(this.x, this.y, 8, 0x87ceeb, 0);
+                ripple.setStrokeStyle(2, 0x87ceeb, 0.6);
                 
                 this.scene.tweens.add({
-                    targets: splash,
-                    x: splash.x + Phaser.Math.Between(-20, 20),
-                    y: splash.y + Phaser.Math.Between(-15, 15),
+                    targets: ripple,
+                    radius: 40 + (i * 15),
                     alpha: 0,
-                    duration: 500,
-                    onComplete: () => splash.destroy()
+                    duration: 600 + (i * 200),
+                    delay: i * 100,
+                    ease: 'Power2.easeOut',
+                    onComplete: () => ripple.destroy()
                 });
             }
+        }
+        
+        // Perfect dive burst effect
+        if (diveTimingBonus && diveTimingBonus.type === 'perfect') {
+            const burst = this.scene.add.circle(this.x, this.y, 3, 0xffffff, 0.8);
+            
+            this.scene.tweens.add({
+                targets: burst,
+                radius: 50,
+                alpha: 0,
+                duration: 300,
+                ease: 'Power3.easeOut',
+                onComplete: () => burst.destroy()
+            });
         }
     }
     
     destroy() {
+        // Clean up water trail particles
+        this.waterTrail.forEach(trail => {
+            if (trail.particle) {
+                trail.particle.destroy();
+            }
+        });
+        this.waterTrail = [];
+        
+        // Destroy main sprite
         this.sprite.destroy();
     }
 }
