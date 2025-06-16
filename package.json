@@ -1,0 +1,19 @@
+{
+  "name": "nvsl-swimming-game",
+  "version": "1.0.0",
+  "description": "NVSL Champions: Rolling Hills Rising - A 2D swimming race game",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "wrangler pages deploy dist"
+  },
+  "dependencies": {
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "wrangler": "^3.0.0"
+  }
+}
