@@ -15,7 +15,10 @@ export default class Swimmer {
         this.strokeCount = 0;
         this.hasStartedSwimming = false;
         this.lastStrokeKey = null; // Track last key pressed for alternation
+        this.expectedNextKey = 'left'; // Start expecting left key
         this.consecutiveBadTiming = 0;
+        this.consecutiveOutOfSync = 0; // Track out-of-sync presses
+        this.syncBonus = 1.0; // Bonus multiplier for staying in sync
         this.position = 0; // Distance swum
         this.finished = false;
         this.finishTime = 0;
@@ -159,19 +162,31 @@ export default class Swimmer {
                 timingQuality = Math.max(0.4, 1.0 - slownessPenalty);
             }
             
-            // Check for alternating keys (for player)
+            // Check for proper alternation (for player)
             let alternationBonus = 1.0;
-            if (this.isPlayer && keyPressed && this.lastStrokeKey) {
-                if (keyPressed !== this.lastStrokeKey) {
-                    alternationBonus = 1.2; // 20% bonus for alternating
-                    this.consecutiveBadTiming = Math.max(0, this.consecutiveBadTiming - 1);
+            let wasCorrectKey = false;
+            if (this.isPlayer && keyPressed) {
+                if (keyPressed === this.expectedNextKey) {
+                    // Correct alternation - reward with bonus
+                    wasCorrectKey = true;
+                    alternationBonus = 1.3; // 30% bonus for correct alternation
+                    this.consecutiveOutOfSync = 0;
+                    this.syncBonus = Math.min(1.5, this.syncBonus + 0.05); // Build up sync bonus
+                    
+                    // Update expected next key
+                    this.expectedNextKey = keyPressed === 'left' ? 'right' : 'left';
                 } else {
-                    alternationBonus = 0.7; // Penalty for same key
-                    this.consecutiveBadTiming++;
+                    // Out of sync - apply penalty
+                    wasCorrectKey = false;
+                    alternationBonus = 0.5; // 50% penalty for wrong key
+                    this.consecutiveOutOfSync++;
+                    this.syncBonus = Math.max(0.7, this.syncBonus - 0.1); // Reduce sync bonus
+                    
+                    // Don't update expected key - they need to press the correct one
                 }
             }
             
-            rhythmQuality = timingQuality * alternationBonus;
+            rhythmQuality = timingQuality * alternationBonus * this.syncBonus;
             
             // Track consecutive bad timing
             if (rhythmQuality < 0.6) {
@@ -189,9 +204,14 @@ export default class Swimmer {
             1.5
         );
         
-        // Penalty for consecutive bad timing
+        // Penalty for consecutive bad timing or out-of-sync presses
         if (this.consecutiveBadTiming > 3) {
             this.rhythmMultiplier *= 0.95;
+        }
+        
+        // Additional penalty for being consistently out of sync
+        if (this.consecutiveOutOfSync > 2) {
+            this.rhythmMultiplier *= 0.9; // Stronger penalty for sync issues
         }
         
         // Store last key for alternation checking
@@ -200,7 +220,17 @@ export default class Swimmer {
         }
         
         // Visual feedback for stroke
-        const strokeColor = rhythmQuality > 0.8 ? 0x00ff00 : rhythmQuality > 0.6 ? 0xffff00 : 0xff6666;
+        let strokeColor = rhythmQuality > 0.8 ? 0x00ff00 : rhythmQuality > 0.6 ? 0xffff00 : 0xff6666;
+        
+        // Special colors for sync feedback
+        if (this.isPlayer && keyPressed) {
+            if (wasCorrectKey || this.strokeCount === 1) {
+                strokeColor = 0x00ff00; // Green for correct key
+            } else {
+                strokeColor = 0xff0000; // Red for wrong key
+            }
+        }
+        
         this.scene.tweens.add({
             targets: this.body,
             scaleX: 1.2,
@@ -213,12 +243,29 @@ export default class Swimmer {
         // Add rhythm feedback effect
         if (this.isPlayer) {
             const feedbackCircle = this.scene.add.circle(this.x, this.y - 20, 8, strokeColor);
+            
+            // Add text feedback for sync status
+            let feedbackText = '';
+            if (wasCorrectKey || this.strokeCount === 1) {
+                feedbackText = 'SYNC!';
+            } else {
+                feedbackText = 'WRONG!';
+            }
+            
+            const textFeedback = this.scene.add.text(this.x, this.y - 35, feedbackText, {
+                font: 'bold 12px Arial',
+                fill: strokeColor === 0x00ff00 ? '#00ff00' : '#ff0000'
+            }).setOrigin(0.5);
+            
             this.scene.tweens.add({
-                targets: feedbackCircle,
+                targets: [feedbackCircle, textFeedback],
                 alpha: 0,
-                y: this.y - 40,
-                duration: 500,
-                onComplete: () => feedbackCircle.destroy()
+                y: this.y - 50,
+                duration: 800,
+                onComplete: () => {
+                    feedbackCircle.destroy();
+                    textFeedback.destroy();
+                }
             });
         }
         

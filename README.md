@@ -5,7 +5,7 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
 ## 🏊‍♂️ Game Features
 
 - **4 Swimming Strokes**: Freestyle, Backstroke, Breaststroke, and Butterfly
-- **Rhythm-Based Gameplay**: Alternate LEFT/RIGHT arrow keys for optimal swimming speed
+- **Sync-Based Gameplay**: Follow on-screen prompts to alternate LEFT/RIGHT keys in perfect sequence
 - **6-Lane Racing**: Compete against 5 AI opponents in realistic pool lanes
 - **Performance Analytics**: Real-time feedback on stroke timing and efficiency
 - **Shape-Based Graphics**: Clean, geometric visual design using Phaser shapes
@@ -22,10 +22,10 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
 6. **Results**: View placement, time, and performance analysis
 
 ### Controls & Strategy
-- **LEFT/RIGHT Arrow Keys**: Alternate these keys for swimming strokes
+- **LEFT/RIGHT Arrow Keys**: Press the correct key shown on screen to maintain sync
 - **SPACEBAR**: Dive start boost (only available first 1 second of race)
 - **Mouse/Click**: Navigate menus and restart races
-- **Optimal Rhythm**: ~800ms between strokes for maximum efficiency
+- **Perfect Sync**: Follow arrow prompts exactly to build up sync multiplier
 - **Visual Feedback**: Watch the rhythm meter (green = excellent, yellow = good, red = poor)
 
 ## 🛠️ Development & Deployment
@@ -82,10 +82,21 @@ npm run preview      # Preview locally with Workers runtime
 
 ## ⚙️ Game Mechanics
 
+### Swimming Controls
+
+The core gameplay revolves around maintaining perfect alternation sync:
+
+- **Sync System**: Follow the on-screen arrow prompts (← PRESS LEFT / PRESS RIGHT →)
+- **Correct Key Bonus**: 30% speed boost + building sync multiplier (up to 1.5x)
+- **Wrong Key Penalty**: 50% speed reduction + sync multiplier loss
+- **Consecutive Errors**: Multiple wrong keys in a row cause severe speed penalties
+- **Visual Feedback**: Green "SYNC!" for correct keys, Red "WRONG!" for mistakes
+- **Timing Window**: 300-600ms between strokes for optimal rhythm
+
 ### Swimming Physics
 - **Base Speed**: 100 pixels/second baseline movement
-- **Rhythm Multiplier**: 0.5x to 1.3x speed based on stroke timing accuracy
-- **Optimal Timing**: ~800ms between LEFT/RIGHT key presses for maximum efficiency
+- **Rhythm Multiplier**: 0.3x to 1.5x speed based on sync accuracy and timing
+- **Perfect Sync**: Follow the on-screen arrow prompts exactly - wrong keys cause speed penalties
 - **Stroke Decay**: Speed decreases over time without proper rhythm maintenance
 - **Dive Boost**: SPACEBAR during first second adds 20 pixels + 1.2x rhythm multiplier
 
@@ -190,7 +201,7 @@ poolracer/
 ## 📋 Development Status
 
 ### ✅ Completed (Phases 1-3)
-- Core swimming mechanics with rhythm-based gameplay
+- Core swimming mechanics with sync-based alternating tap gameplay
 - 4 stroke types with visual differentiation
 - AI opponents with varying skill levels
 - Complete race flow (menu → race → results)

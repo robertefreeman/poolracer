@@ -125,12 +125,28 @@ export default class RaceScene extends Phaser.Scene {
         });
         
         // Instructions
-        this.instructionText = this.add.text(400, 550, 'Alternate LEFT/RIGHT arrows (300-600ms timing) for best speed!', {
+        this.instructionText = this.add.text(400, 550, 'Follow the arrow prompts! Press the correct LEFT/RIGHT key to stay in sync!', {
             font: '16px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 10, y: 5 }
         }).setOrigin(0.5);
+        
+        // Next key indicator
+        this.nextKeyIndicator = this.add.text(400, 50, '← PRESS LEFT', {
+            font: 'bold 24px Arial',
+            fill: '#00ff00',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+        
+        // Sync status indicator
+        this.syncStatusText = this.add.text(10, 130, 'Sync: Perfect', {
+            font: '14px Arial',
+            fill: '#00ff00',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 3 }
+        });
         
         // Countdown text
         this.countdownText = this.add.text(400, 300, '', {
@@ -187,7 +203,7 @@ export default class RaceScene extends Phaser.Scene {
         // Update all swimmers
         this.swimmers.forEach(swimmer => swimmer.update(time, delta));
         
-        // Update rhythm meter for player
+        // Update rhythm meter and UI for player
         const player = this.swimmers[raceConfig.playerLane];
         if (player) {
             const rhythmWidth = player.rhythmMultiplier * 80;
@@ -200,6 +216,27 @@ export default class RaceScene extends Phaser.Scene {
                 this.rhythmBar.setFillStyle(0xffff00); // Yellow - good
             } else {
                 this.rhythmBar.setFillStyle(0xff0000); // Red - poor
+            }
+            
+            // Update next key indicator
+            if (player.expectedNextKey === 'left') {
+                this.nextKeyIndicator.setText('← PRESS LEFT');
+                this.nextKeyIndicator.setFill('#00ff00');
+            } else {
+                this.nextKeyIndicator.setText('PRESS RIGHT →');
+                this.nextKeyIndicator.setFill('#00ff00');
+            }
+            
+            // Update sync status
+            if (player.consecutiveOutOfSync === 0) {
+                this.syncStatusText.setText(`Sync: Perfect (${player.syncBonus.toFixed(1)}x)`);
+                this.syncStatusText.setFill('#00ff00');
+            } else if (player.consecutiveOutOfSync === 1) {
+                this.syncStatusText.setText('Sync: Off - Fix it!');
+                this.syncStatusText.setFill('#ffff00');
+            } else {
+                this.syncStatusText.setText(`Sync: BAD (${player.consecutiveOutOfSync} errors)`);
+                this.syncStatusText.setFill('#ff0000');
             }
         }
     }
