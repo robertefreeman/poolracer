@@ -78,14 +78,14 @@ export default class Swimmer {
         this.position += this.speed * (delta / 1000);
         
         // Update visual position
-        const newX = 50 + this.position;
+        const newX = 80 + this.position;
         this.updatePosition(newX, this.y);
         
         // Animate swimming
         this.updateAnimation(time, delta);
         
         // Check for finish
-        if (this.position >= 700 && !this.finished) {
+        if (this.position >= 1120 && !this.finished) {
             this.finished = true;
             this.finishTime = time;
             this.scene.swimmerFinished(this);

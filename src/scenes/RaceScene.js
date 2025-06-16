@@ -62,12 +62,12 @@ export default class RaceScene extends Phaser.Scene {
         this.add.rectangle(width / 2, height - 5, width, 10, 0x333333);
         
         // Start and finish lines
-        this.add.rectangle(50, height / 2, 4, height, 0x00ff00); // Start
-        this.add.rectangle(750, height / 2, 4, height, 0xff0000); // Finish
+        this.add.rectangle(80, height / 2, 4, height, 0x00ff00); // Start
+        this.add.rectangle(1200, height / 2, 4, height, 0xff0000); // Finish
         
         // Distance markers
         for (let i = 1; i < 4; i++) {
-            const x = 50 + (i * 175);
+            const x = 80 + (i * 280);
             this.add.rectangle(x, height / 2, 2, height, 0xcccccc);
             this.add.text(x - 10, 10, `${i * 25}m`, {
                 font: '12px Arial',
@@ -86,7 +86,7 @@ export default class RaceScene extends Phaser.Scene {
             
             const swimmer = new Swimmer(
                 this,
-                50,
+                80,
                 y,
                 i,
                 isPlayer,

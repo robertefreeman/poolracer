@@ -8,16 +8,59 @@
         body {
             margin: 0;
             padding: 0;
-            background: #1a1a2e;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             font-family: Arial, sans-serif;
+            overflow: hidden;
         }
         #game-container {
-            border: 2px solid #16213e;
+            border: 3px solid #66ccff;
+            border-radius: 12px;
+            box-shadow: 
+                0 0 20px rgba(102, 204, 255, 0.3),
+                0 0 40px rgba(102, 204, 255, 0.1),
+                inset 0 0 20px rgba(0, 102, 204, 0.1);
+            background: #000;
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+        #game-container canvas {
+            display: block;
             border-radius: 8px;
+        }
+        
+        /* Responsive scaling for smaller screens */
+        @media (max-width: 1400px) {
+            #game-container {
+                transform: scale(0.9);
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            #game-container {
+                transform: scale(0.8);
+            }
+        }
+        
+        @media (max-width: 1000px) {
+            #game-container {
+                transform: scale(0.7);
+            }
+        }
+        
+        @media (max-width: 800px) {
+            #game-container {
+                transform: scale(0.6);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            #game-container {
+                transform: scale(0.5);
+            }
         }
     </style>
 </head>
