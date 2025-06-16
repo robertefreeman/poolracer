@@ -10,10 +10,14 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "phaser": "^3.80.1",
-    "@cloudflare/kv-asset-handler": "^0.3.0"
+    "phaser": "^3.85.2",
+    "@cloudflare/kv-asset-handler": "^0.3.4"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0"
+    "wrangler": "^3.114.9"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   }
 }
