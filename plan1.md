@@ -1,4 +1,4 @@
-# NVSL Champions: Rolling Hills Rising - Build Plan
+# Rolling Hills Racers - Build Plan
 
 ## Project Overview
 A simplified 2D swimming race game focusing on the race phase only, built with Phaser3 and hosted on Cloudflare Pages (free tier).

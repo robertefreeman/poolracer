@@ -1,4 +1,4 @@
-// Cloudflare Worker for NVSL Swimming Game
+// Cloudflare Worker for Rolling Hills Racers
 // Serves static assets and handles routing
 
 import { getAssetFromKV, mapRequestToAsset } from '@cloudflare/kv-asset-handler'

@@ -8,14 +8,9 @@ export default class MenuScene extends Phaser.Scene {
         const height = this.cameras.main.height;
 
         // Title
-        this.add.text(width / 2, 100, 'NVSL Champions', {
+        this.add.text(width / 2, 120, 'Rolling Hills Racers', {
             font: 'bold 36px Arial',
             fill: '#ffffff'
-        }).setOrigin(0.5);
-
-        this.add.text(width / 2, 140, 'Rolling Hills Rising', {
-            font: '24px Arial',
-            fill: '#cccccc'
         }).setOrigin(0.5);
 
         // Stroke selection buttons

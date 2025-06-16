@@ -1,4 +1,4 @@
-# NVSL Champions: Rolling Hills Rising
+# Rolling Hills Racers
 
 A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mechanics and multiple stroke types. Deployed on Cloudflare Workers for global edge performance.
 

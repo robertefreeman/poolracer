@@ -1,7 +1,7 @@
 {
-  "name": "nvsl-swimming-game",
+  "name": "rhracers",
   "version": "1.0.0",
-  "description": "NVSL Champions: Rolling Hills Rising - A 2D swimming race game",
+  "description": "Rolling Hills Racers - A 2D swimming race game",
   "main": "src/main.js",
   "scripts": {
     "dev": "wrangler dev",

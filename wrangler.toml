@@ -1,17 +1,16 @@
-name = "nvsl-swimming-game"
+name = "rhracers"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [site]
 bucket = "./dist"
-entry-point = "."
 
 [build]
-command = "echo 'No build step required'"
+command = "npm run build"
 cwd = "."
 
 [env.production]
-name = "nvsl-swimming-game"
+name = "rhracers"
 
 [env.preview] 
-name = "nvsl-swimming-game-preview"
+name = "rhracers-preview"
