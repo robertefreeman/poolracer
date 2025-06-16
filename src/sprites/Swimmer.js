@@ -10,15 +10,15 @@ export default class Swimmer {
         // Swimming stats
         this.speed = 0;
         this.baseSpeed = 100;
-        this.rhythmMultiplier = isPlayer ? 0.0 : 1.0; // Player starts with no movement
+        this.momentum = 0; // Current forward momentum
+        this.maxMomentum = 150; // Maximum momentum from alternating taps
+        this.momentumDecay = 50; // Momentum lost per second when not tapping
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
         this.hasStartedSwimming = false;
         this.lastStrokeKey = null; // Track last key pressed for alternation
         this.expectedNextKey = 'left'; // Start expecting left key
-        this.consecutiveBadTiming = 0;
-        this.consecutiveOutOfSync = 0; // Track out-of-sync presses
-        this.syncBonus = 1.0; // Bonus multiplier for staying in sync
+        this.hasDived = false; // Track if player has dived to start
         this.position = 0; // Distance swum
         this.finished = false;
         this.finishTime = 0;
@@ -75,16 +75,20 @@ export default class Swimmer {
             this.scene.swimmerFinished(this);
         }
         
-        // Decay rhythm if no recent strokes
-        if (time - this.lastStrokeTime > 2000) {
-            this.rhythmMultiplier = Math.max(0.5, this.rhythmMultiplier - 0.1 * (delta / 1000));
-        }
-        
-        // Update speed based on rhythm
-        if (this.isPlayer && !this.hasStartedSwimming) {
-            this.speed = 0; // Player doesn't move until first stroke
+        // Handle momentum decay for player
+        if (this.isPlayer) {
+            if (!this.hasDived) {
+                // Player can't move until they dive
+                this.speed = 0;
+                this.momentum = 0;
+            } else {
+                // Decay momentum over time when not tapping
+                this.momentum = Math.max(0, this.momentum - this.momentumDecay * (delta / 1000));
+                this.speed = this.momentum;
+            }
         } else {
-            this.speed = this.baseSpeed * this.rhythmMultiplier * (this.isPlayer ? 1.0 : this.aiSkill);
+            // AI uses old rhythm system
+            this.speed = this.baseSpeed * (this.aiSkill || 1.0);
         }
     }
     
@@ -135,101 +139,49 @@ export default class Swimmer {
         this.lastStrokeTime = time;
         this.strokeCount++;
         
-        // Mark that player has started swimming
-        if (this.isPlayer) {
-            this.hasStartedSwimming = true;
-            // Start with good rhythm on first stroke
-            if (this.strokeCount === 1) {
-                this.rhythmMultiplier = 1.0;
-            }
+        // For AI swimmers, use simple stroke system
+        if (!this.isPlayer) {
+            return 1.0; // AI always has good strokes
         }
         
-        let rhythmQuality = 1.0;
+        // Player must have dived first
+        if (!this.hasDived) {
+            return 0; // No movement without dive
+        }
         
-        // Only calculate timing for strokes after the first
-        if (this.strokeCount > 1) {
-            // Ideal timing is faster: 300-600ms for good rhythm
-            const idealMinTiming = 300;
-            const idealMaxTiming = 600;
+        let wasCorrectKey = false;
+        let momentumGain = 0;
+        
+        // Check if this is the correct alternating key
+        if (keyPressed === this.expectedNextKey) {
+            // Correct alternation - add momentum
+            wasCorrectKey = true;
+            momentumGain = 40; // Base momentum gain per correct stroke
             
-            let timingQuality = 1.0;
-            if (timeSinceLastStroke < idealMinTiming) {
-                // Too fast - penalize
-                timingQuality = Math.max(0.3, timeSinceLastStroke / idealMinTiming);
-            } else if (timeSinceLastStroke > idealMaxTiming) {
-                // Too slow - penalize more gradually
-                const slownessPenalty = Math.min(1.0, (timeSinceLastStroke - idealMaxTiming) / 1000);
-                timingQuality = Math.max(0.4, 1.0 - slownessPenalty);
-            }
-            
-            // Check for proper alternation (for player)
-            let alternationBonus = 1.0;
-            let wasCorrectKey = false;
-            if (this.isPlayer && keyPressed) {
-                if (keyPressed === this.expectedNextKey) {
-                    // Correct alternation - reward with bonus
-                    wasCorrectKey = true;
-                    alternationBonus = 1.3; // 30% bonus for correct alternation
-                    this.consecutiveOutOfSync = 0;
-                    this.syncBonus = Math.min(1.5, this.syncBonus + 0.05); // Build up sync bonus
-                    
-                    // Update expected next key
-                    this.expectedNextKey = keyPressed === 'left' ? 'right' : 'left';
-                } else {
-                    // Out of sync - apply penalty
-                    wasCorrectKey = false;
-                    alternationBonus = 0.5; // 50% penalty for wrong key
-                    this.consecutiveOutOfSync++;
-                    this.syncBonus = Math.max(0.7, this.syncBonus - 0.1); // Reduce sync bonus
-                    
-                    // Don't update expected key - they need to press the correct one
+            // Timing bonus for good rhythm (300-600ms)
+            if (this.strokeCount > 1) {
+                if (timeSinceLastStroke >= 300 && timeSinceLastStroke <= 600) {
+                    momentumGain += 20; // Bonus for good timing
+                } else if (timeSinceLastStroke < 300) {
+                    momentumGain -= 10; // Penalty for too fast
+                } else if (timeSinceLastStroke > 1000) {
+                    momentumGain -= 15; // Penalty for too slow
                 }
             }
             
-            rhythmQuality = timingQuality * alternationBonus * this.syncBonus;
+            // Add momentum and update expected key
+            this.momentum = Math.min(this.maxMomentum, this.momentum + momentumGain);
+            this.expectedNextKey = keyPressed === 'left' ? 'right' : 'left';
             
-            // Track consecutive bad timing
-            if (rhythmQuality < 0.6) {
-                this.consecutiveBadTiming++;
-            } else {
-                this.consecutiveBadTiming = Math.max(0, this.consecutiveBadTiming - 1);
-            }
+        } else {
+            // Wrong key - no momentum gain, lose some momentum
+            wasCorrectKey = false;
+            this.momentum = Math.max(0, this.momentum - 20);
+            // Don't update expected key - they need to press the correct one
         }
         
-        // Update rhythm multiplier with smoother changes
-        const rhythmChange = (rhythmQuality - 0.8) * 0.15; // Smaller, smoother changes
-        this.rhythmMultiplier = Phaser.Math.Clamp(
-            this.rhythmMultiplier + rhythmChange,
-            0.3,
-            1.5
-        );
-        
-        // Penalty for consecutive bad timing or out-of-sync presses
-        if (this.consecutiveBadTiming > 3) {
-            this.rhythmMultiplier *= 0.95;
-        }
-        
-        // Additional penalty for being consistently out of sync
-        if (this.consecutiveOutOfSync > 2) {
-            this.rhythmMultiplier *= 0.9; // Stronger penalty for sync issues
-        }
-        
-        // Store last key for alternation checking
-        if (keyPressed) {
-            this.lastStrokeKey = keyPressed;
-        }
-        
-        // Visual feedback for stroke
-        let strokeColor = rhythmQuality > 0.8 ? 0x00ff00 : rhythmQuality > 0.6 ? 0xffff00 : 0xff6666;
-        
-        // Special colors for sync feedback
-        if (this.isPlayer && keyPressed) {
-            if (wasCorrectKey || this.strokeCount === 1) {
-                strokeColor = 0x00ff00; // Green for correct key
-            } else {
-                strokeColor = 0xff0000; // Red for wrong key
-            }
-        }
+        // Visual feedback
+        let strokeColor = wasCorrectKey ? 0x00ff00 : 0xff0000;
         
         this.scene.tweens.add({
             targets: this.body,
@@ -240,43 +192,39 @@ export default class Swimmer {
             ease: 'Power2'
         });
         
-        // Add rhythm feedback effect
-        if (this.isPlayer) {
-            const feedbackCircle = this.scene.add.circle(this.x, this.y - 20, 8, strokeColor);
-            
-            // Add text feedback for sync status
-            let feedbackText = '';
-            if (wasCorrectKey || this.strokeCount === 1) {
-                feedbackText = 'SYNC!';
-            } else {
-                feedbackText = 'WRONG!';
-            }
-            
-            const textFeedback = this.scene.add.text(this.x, this.y - 35, feedbackText, {
-                font: 'bold 12px Arial',
-                fill: strokeColor === 0x00ff00 ? '#00ff00' : '#ff0000'
-            }).setOrigin(0.5);
-            
-            this.scene.tweens.add({
-                targets: [feedbackCircle, textFeedback],
-                alpha: 0,
-                y: this.y - 50,
-                duration: 800,
-                onComplete: () => {
-                    feedbackCircle.destroy();
-                    textFeedback.destroy();
-                }
-            });
-        }
+        // Add feedback effect
+        const feedbackCircle = this.scene.add.circle(this.x, this.y - 20, 8, strokeColor);
         
-        return rhythmQuality;
+        let feedbackText = wasCorrectKey ? 'STROKE!' : 'WRONG!';
+        const textFeedback = this.scene.add.text(this.x, this.y - 35, feedbackText, {
+            font: 'bold 12px Arial',
+            fill: wasCorrectKey ? '#00ff00' : '#ff0000'
+        }).setOrigin(0.5);
+        
+        this.scene.tweens.add({
+            targets: [feedbackCircle, textFeedback],
+            alpha: 0,
+            y: this.y - 50,
+            duration: 800,
+            onComplete: () => {
+                feedbackCircle.destroy();
+                textFeedback.destroy();
+            }
+        });
+        
+        return wasCorrectKey ? 1.0 : 0;
     }
     
     dive(time) {
-        // Initial dive boost
-        this.position += 20;
-        this.rhythmMultiplier = 1.2;
-        this.lastStrokeTime = time;
+        if (this.isPlayer) {
+            // Mark that player has dived and can now swim
+            this.hasDived = true;
+            this.momentum = 80; // Initial momentum from dive
+            this.lastStrokeTime = time;
+        } else {
+            // AI dive (simple)
+            this.position += 20;
+        }
         
         // Visual dive effect
         this.scene.tweens.add({

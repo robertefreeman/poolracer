@@ -114,18 +114,18 @@ export default class RaceScene extends Phaser.Scene {
             padding: { x: 10, y: 5 }
         });
         
-        // Rhythm meter for player
-        this.rhythmMeter = this.add.rectangle(10, 80, 100, 20, 0x333333);
-        this.rhythmBar = this.add.rectangle(10, 80, 50, 16, 0x00ff00);
-        this.rhythmBar.setOrigin(0, 0.5);
+        // Momentum meter for player
+        this.momentumMeter = this.add.rectangle(10, 80, 100, 20, 0x333333);
+        this.momentumBar = this.add.rectangle(10, 80, 0, 16, 0x00ff00);
+        this.momentumBar.setOrigin(0, 0.5);
         
-        this.add.text(10, 105, 'Rhythm', {
+        this.add.text(10, 105, 'Momentum', {
             font: '12px Arial',
             fill: '#ffffff'
         });
         
         // Instructions
-        this.instructionText = this.add.text(400, 550, 'Follow the arrow prompts! Press the correct LEFT/RIGHT key to stay in sync!', {
+        this.instructionText = this.add.text(400, 550, 'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim! Stop tapping = slow down!', {
             font: '16px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -140,10 +140,10 @@ export default class RaceScene extends Phaser.Scene {
             strokeThickness: 2
         }).setOrigin(0.5);
         
-        // Sync status indicator
-        this.syncStatusText = this.add.text(10, 130, 'Sync: Perfect', {
+        // Dive status indicator
+        this.diveStatusText = this.add.text(10, 130, 'Press SPACEBAR to dive!', {
             font: '14px Arial',
-            fill: '#00ff00',
+            fill: '#ffff00',
             backgroundColor: '#000000',
             padding: { x: 5, y: 3 }
         });
@@ -203,40 +203,49 @@ export default class RaceScene extends Phaser.Scene {
         // Update all swimmers
         this.swimmers.forEach(swimmer => swimmer.update(time, delta));
         
-        // Update rhythm meter and UI for player
+        // Update momentum meter and UI for player
         const player = this.swimmers[raceConfig.playerLane];
         if (player) {
-            const rhythmWidth = player.rhythmMultiplier * 80;
-            this.rhythmBar.width = Math.max(10, rhythmWidth);
+            // Update momentum bar
+            const momentumWidth = (player.momentum / player.maxMomentum) * 80;
+            this.momentumBar.width = Math.max(0, momentumWidth);
             
-            // Color based on rhythm quality
-            if (player.rhythmMultiplier > 1.1) {
-                this.rhythmBar.setFillStyle(0x00ff00); // Green - excellent
-            } else if (player.rhythmMultiplier > 0.9) {
-                this.rhythmBar.setFillStyle(0xffff00); // Yellow - good
+            // Color based on momentum level
+            if (player.momentum > 100) {
+                this.momentumBar.setFillStyle(0x00ff00); // Green - high momentum
+            } else if (player.momentum > 50) {
+                this.momentumBar.setFillStyle(0xffff00); // Yellow - medium momentum
             } else {
-                this.rhythmBar.setFillStyle(0xff0000); // Red - poor
+                this.momentumBar.setFillStyle(0xff0000); // Red - low momentum
             }
             
             // Update next key indicator
-            if (player.expectedNextKey === 'left') {
-                this.nextKeyIndicator.setText('← PRESS LEFT');
-                this.nextKeyIndicator.setFill('#00ff00');
+            if (!player.hasDived) {
+                this.nextKeyIndicator.setText('SPACEBAR TO DIVE');
+                this.nextKeyIndicator.setFill('#ffff00');
             } else {
-                this.nextKeyIndicator.setText('PRESS RIGHT →');
-                this.nextKeyIndicator.setFill('#00ff00');
+                if (player.expectedNextKey === 'left') {
+                    this.nextKeyIndicator.setText('← PRESS LEFT');
+                    this.nextKeyIndicator.setFill('#00ff00');
+                } else {
+                    this.nextKeyIndicator.setText('PRESS RIGHT →');
+                    this.nextKeyIndicator.setFill('#00ff00');
+                }
             }
             
-            // Update sync status
-            if (player.consecutiveOutOfSync === 0) {
-                this.syncStatusText.setText(`Sync: Perfect (${player.syncBonus.toFixed(1)}x)`);
-                this.syncStatusText.setFill('#00ff00');
-            } else if (player.consecutiveOutOfSync === 1) {
-                this.syncStatusText.setText('Sync: Off - Fix it!');
-                this.syncStatusText.setFill('#ffff00');
+            // Update dive/swim status
+            if (!player.hasDived) {
+                this.diveStatusText.setText('Press SPACEBAR to dive!');
+                this.diveStatusText.setFill('#ffff00');
+            } else if (player.momentum > 80) {
+                this.diveStatusText.setText('Swimming fast!');
+                this.diveStatusText.setFill('#00ff00');
+            } else if (player.momentum > 30) {
+                this.diveStatusText.setText('Keep alternating!');
+                this.diveStatusText.setFill('#ffff00');
             } else {
-                this.syncStatusText.setText(`Sync: BAD (${player.consecutiveOutOfSync} errors)`);
-                this.syncStatusText.setFill('#ff0000');
+                this.diveStatusText.setText('Slowing down - tap faster!');
+                this.diveStatusText.setFill('#ff0000');
             }
         }
     }

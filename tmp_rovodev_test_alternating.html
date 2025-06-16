@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Alternating Tap System</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.85.2/dist/phaser.min.js"></script>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div style="margin: 20px; font-family: Arial;">
+        <h3>Test Instructions:</h3>
+        <p>1. Press LEFT arrow to start</p>
+        <p>2. Follow the prompts - alternate LEFT/RIGHT</p>
+        <p>3. Try pressing the same key twice to see penalty</p>
+        <p>4. Try pressing wrong key to see sync penalty</p>
+    </div>
+    
+    <script type="module">
+        // Simplified test version of the swimmer mechanics
+        class TestSwimmer {
+            constructor() {
+                this.expectedNextKey = 'left';
+                this.consecutiveOutOfSync = 0;
+                this.syncBonus = 1.0;
+                this.strokeCount = 0;
+                this.lastStrokeTime = 0;
+            }
+            
+            stroke(time, keyPressed) {
+                const timeSinceLastStroke = time - this.lastStrokeTime;
+                this.lastStrokeTime = time;
+                this.strokeCount++;
+                
+                console.log(`Stroke ${this.strokeCount}: Pressed ${keyPressed}, Expected ${this.expectedNextKey}`);
+                
+                let alternationBonus = 1.0;
+                if (keyPressed === this.expectedNextKey) {
+                    alternationBonus = 1.3;
+                    this.consecutiveOutOfSync = 0;
+                    this.syncBonus = Math.min(1.5, this.syncBonus + 0.05);
+                    this.expectedNextKey = keyPressed === 'left' ? 'right' : 'left';
+                    console.log(`✓ CORRECT! Bonus: ${alternationBonus}, Sync: ${this.syncBonus.toFixed(2)}, Next: ${this.expectedNextKey}`);
+                } else {
+                    alternationBonus = 0.5;
+                    this.consecutiveOutOfSync++;
+                    this.syncBonus = Math.max(0.7, this.syncBonus - 0.1);
+                    console.log(`✗ WRONG! Penalty: ${alternationBonus}, Sync: ${this.syncBonus.toFixed(2)}, Errors: ${this.consecutiveOutOfSync}`);
+                }
+                
+                return alternationBonus * this.syncBonus;
+            }
+        }
+        
+        class TestScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'TestScene' });
+            }
+            
+            create() {
+                this.swimmer = new TestSwimmer();
+                
+                this.add.text(400, 100, 'Alternating Tap Test', {
+                    font: 'bold 32px Arial',
+                    fill: '#ffffff'
+                }).setOrigin(0.5);
+                
+                this.nextKeyText = this.add.text(400, 200, '← PRESS LEFT', {
+                    font: 'bold 24px Arial',
+                    fill: '#00ff00'
+                }).setOrigin(0.5);
+                
+                this.statusText = this.add.text(400, 250, 'Sync: Perfect (1.0x)', {
+                    font: '18px Arial',
+                    fill: '#00ff00'
+                }).setOrigin(0.5);
+                
+                this.feedbackText = this.add.text(400, 300, '', {
+                    font: '16px Arial',
+                    fill: '#ffffff'
+                }).setOrigin(0.5);
+                
+                this.cursors = this.input.keyboard.createCursorKeys();
+            }
+            
+            update(time) {
+                let keyPressed = null;
+                if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
+                    keyPressed = 'left';
+                } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
+                    keyPressed = 'right';
+                }
+                
+                if (keyPressed) {
+                    const quality = this.swimmer.stroke(time, keyPressed);
+                    
+                    // Update UI
+                    if (this.swimmer.expectedNextKey === 'left') {
+                        this.nextKeyText.setText('← PRESS LEFT');
+                    } else {
+                        this.nextKeyText.setText('PRESS RIGHT →');
+                    }
+                    
+                    if (this.swimmer.consecutiveOutOfSync === 0) {
+                        this.statusText.setText(`Sync: Perfect (${this.swimmer.syncBonus.toFixed(1)}x)`);
+                        this.statusText.setFill('#00ff00');
+                    } else {
+                        this.statusText.setText(`Sync: BAD (${this.swimmer.consecutiveOutOfSync} errors)`);
+                        this.statusText.setFill('#ff0000');
+                    }
+                    
+                    this.feedbackText.setText(`Quality: ${quality.toFixed(2)} | Stroke: ${this.swimmer.strokeCount}`);
+                }
+            }
+        }
+        
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 400,
+            parent: 'game-container',
+            backgroundColor: '#0066cc',
+            scene: TestScene
+        };
+        
+        new Phaser.Game(config);
+    </script>
+</body>
+</html>

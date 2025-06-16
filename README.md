@@ -5,7 +5,7 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
 ## 🏊‍♂️ Game Features
 
 - **4 Swimming Strokes**: Freestyle, Backstroke, Breaststroke, and Butterfly
-- **Sync-Based Gameplay**: Follow on-screen prompts to alternate LEFT/RIGHT keys in perfect sequence
+- **Momentum-Based Swimming**: Dive with SPACEBAR, then alternate LEFT/RIGHT keys to build momentum
 - **6-Lane Racing**: Compete against 5 AI opponents in realistic pool lanes
 - **Performance Analytics**: Real-time feedback on stroke timing and efficiency
 - **Shape-Based Graphics**: Clean, geometric visual design using Phaser shapes
@@ -22,11 +22,11 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
 6. **Results**: View placement, time, and performance analysis
 
 ### Controls & Strategy
-- **LEFT/RIGHT Arrow Keys**: Press the correct key shown on screen to maintain sync
-- **SPACEBAR**: Dive start boost (only available first 1 second of race)
+- **SPACEBAR**: Dive to start swimming (required before any movement)
+- **LEFT/RIGHT Arrow Keys**: Alternate these keys to build and maintain momentum
 - **Mouse/Click**: Navigate menus and restart races
-- **Perfect Sync**: Follow arrow prompts exactly to build up sync multiplier
-- **Visual Feedback**: Watch the rhythm meter (green = excellent, yellow = good, red = poor)
+- **Momentum System**: Stop tapping = slow down and stop, keep alternating = maintain speed
+- **Visual Feedback**: Watch the momentum meter (green = high, yellow = medium, red = low)
 
 ## 🛠️ Development & Deployment
 
@@ -84,21 +84,22 @@ npm run preview      # Preview locally with Workers runtime
 
 ### Swimming Controls
 
-The core gameplay revolves around maintaining perfect alternation sync:
+The core gameplay revolves around momentum-based alternating taps:
 
-- **Sync System**: Follow the on-screen arrow prompts (← PRESS LEFT / PRESS RIGHT →)
-- **Correct Key Bonus**: 30% speed boost + building sync multiplier (up to 1.5x)
-- **Wrong Key Penalty**: 50% speed reduction + sync multiplier loss
-- **Consecutive Errors**: Multiple wrong keys in a row cause severe speed penalties
-- **Visual Feedback**: Green "SYNC!" for correct keys, Red "WRONG!" for mistakes
-- **Timing Window**: 300-600ms between strokes for optimal rhythm
+- **Dive Start**: Must press SPACEBAR to dive before any movement is possible
+- **Alternating Taps**: LEFT → RIGHT → LEFT → RIGHT... builds momentum
+- **Momentum Gain**: Each correct alternating tap adds momentum (40+ points)
+- **Wrong Key Penalty**: Pressing wrong key loses momentum and gives no forward movement
+- **Momentum Decay**: Momentum constantly decreases when not tapping (50 points/second)
+- **Timing Bonus**: 300-600ms between taps gives bonus momentum
+- **Visual Feedback**: Green "STROKE!" for correct keys, Red "WRONG!" for mistakes
 
 ### Swimming Physics
-- **Base Speed**: 100 pixels/second baseline movement
-- **Rhythm Multiplier**: 0.3x to 1.5x speed based on sync accuracy and timing
-- **Perfect Sync**: Follow the on-screen arrow prompts exactly - wrong keys cause speed penalties
-- **Stroke Decay**: Speed decreases over time without proper rhythm maintenance
-- **Dive Boost**: SPACEBAR during first second adds 20 pixels + 1.2x rhythm multiplier
+- **Momentum System**: Speed directly equals current momentum (0-150 pixels/second)
+- **Dive Requirement**: Player cannot move until diving with SPACEBAR
+- **Momentum Decay**: Loses 50 momentum per second when not tapping
+- **Alternation Only**: Only correct alternating taps generate forward movement
+- **Dive Boost**: SPACEBAR gives initial 80 momentum to start swimming
 
 ### Race Setup
 - **Pool Length**: 25 meters (700 pixels)
@@ -201,7 +202,7 @@ poolracer/
 ## 📋 Development Status
 
 ### ✅ Completed (Phases 1-3)
-- Core swimming mechanics with sync-based alternating tap gameplay
+- Core swimming mechanics with momentum-based alternating tap gameplay
 - 4 stroke types with visual differentiation
 - AI opponents with varying skill levels
 - Complete race flow (menu → race → results)
