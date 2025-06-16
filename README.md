@@ -33,8 +33,19 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
 
 2. Open your browser to `http://localhost:8080`
 
-## Deployment to Cloudflare Workers
+## Deployment to Cloudflare Pages
 
+### Automatic Deployment (Recommended)
+The repository is configured for automatic deployment to Cloudflare Pages via GitHub Actions:
+
+1. **Set up Cloudflare secrets** in your GitHub repository:
+   - Go to Settings → Secrets and variables → Actions
+   - Add `CLOUDFLARE_API_TOKEN` (get from Cloudflare dashboard)
+   - Add `CLOUDFLARE_ACCOUNT_ID` (get from Cloudflare dashboard)
+
+2. **Push to main branch** - deployment happens automatically!
+
+### Manual Deployment
 1. Install Wrangler CLI (if not already installed):
    ```bash
    npm install -g wrangler
@@ -49,6 +60,8 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
    ```bash
    wrangler pages deploy . --project-name=nvsl-swimming-game
    ```
+
+3. **Your game will be live at**: `https://nvsl-swimming-game.pages.dev`
 
 ## Game Mechanics
 
@@ -88,7 +101,7 @@ A 2D swimming race game built with Phaser 3, featuring rhythm-based swimming mec
 - **Framework**: Phaser 3.80.1 (loaded from CDN)
 - **Physics**: Arcade physics with custom swimming mechanics
 - **Graphics**: Shape-based rendering (no sprite assets needed)
-- **Hosting**: Cloudflare Workers/Pages
+- **Hosting**: Cloudflare Pages with Workers integration
 - **No Dependencies**: Runs directly in browser with CDN-loaded Phaser
 
 ## Future Enhancements

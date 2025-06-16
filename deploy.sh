@@ -1,17 +1,25 @@
 #!/bin/bash
 
-# Simple deployment script for Cloudflare Workers
-echo "Deploying NVSL Swimming Game to Cloudflare Workers..."
+# Deployment script for Cloudflare Pages with Workers
+echo "🏊‍♂️ Deploying NVSL Swimming Game to Cloudflare Pages..."
 
 # Check if wrangler is installed
 if ! command -v wrangler &> /dev/null; then
-    echo "Installing Wrangler CLI..."
+    echo "📦 Installing Wrangler CLI..."
     npm install -g wrangler
 fi
 
-# Deploy to Cloudflare Workers
-echo "Deploying to Cloudflare Workers..."
-wrangler pages deploy . --project-name=nvsl-swimming-game
+# Login to Cloudflare (if not already logged in)
+echo "🔐 Checking Cloudflare authentication..."
+if ! wrangler whoami &> /dev/null; then
+    echo "Please login to Cloudflare:"
+    wrangler login
+fi
 
-echo "Deployment complete!"
-echo "Your game should be available at your Cloudflare Workers URL"
+# Deploy to Cloudflare Pages
+echo "🚀 Deploying to Cloudflare Pages..."
+wrangler pages deploy . --project-name=nvsl-swimming-game --compatibility-date=2024-01-01
+
+echo "✅ Deployment complete!"
+echo "🌐 Your game will be available at: https://nvsl-swimming-game.pages.dev"
+echo "📊 Check deployment status at: https://dash.cloudflare.com/pages"
