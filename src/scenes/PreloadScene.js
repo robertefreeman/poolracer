@@ -43,7 +43,14 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('dummy', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
     }
 
-    create() {
-        this.scene.start('MenuScene');
+    async create() {
+        // Check if we need to show orientation prompt first
+        const { MobileDetection } = await import('../utils/MobileDetection.js');
+        
+        if (MobileDetection.shouldShowLandscapePrompt()) {
+            this.scene.start('OrientationScene');
+        } else {
+            this.scene.start('MenuScene');
+        }
     }
 }

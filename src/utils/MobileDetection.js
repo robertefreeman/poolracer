@@ -54,4 +54,39 @@ export class MobileDetection {
                 return { width: 60, height: 60, fontSize: '16px' };
         }
     }
+    
+    static isLandscape() {
+        return window.innerWidth > window.innerHeight;
+    }
+    
+    static isPortrait() {
+        return window.innerHeight > window.innerWidth;
+    }
+    
+    static getOptimalGameSize() {
+        const baseWidth = 1280;
+        const baseHeight = 720;
+        
+        if (!this.isMobile()) {
+            return { width: baseWidth, height: baseHeight, scale: 1 };
+        }
+        
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        // For mobile, calculate scale to fit screen
+        const scaleX = screenWidth / baseWidth;
+        const scaleY = screenHeight / baseHeight;
+        const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+        
+        return {
+            width: Math.floor(baseWidth * scale),
+            height: Math.floor(baseHeight * scale),
+            scale: scale
+        };
+    }
+    
+    static shouldShowLandscapePrompt() {
+        return this.isMobile() && this.isPortrait() && window.innerWidth < 800;
+    }
 }

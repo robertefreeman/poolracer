@@ -1,7 +1,18 @@
+import { MobileDetection } from '../utils/MobileDetection.js';
+
+// Get optimal game size based on device
+const gameSize = MobileDetection.getOptimalGameSize();
+
 export const gameConfig = {
     type: Phaser.AUTO,
-    width: 1280,
-    height: 720,
+    width: gameSize.width,
+    height: gameSize.height,
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: gameSize.width,
+        height: gameSize.height
+    },
     physics: {
         default: 'arcade',
         arcade: {

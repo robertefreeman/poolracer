@@ -713,6 +713,11 @@ export default class RaceScene extends Phaser.Scene {
         const height = this.cameras.main.height;
         const controlSize = MobileDetection.getOptimalControlSize();
         
+        // Adjust control size based on screen size
+        const scale = Math.min(width / 1280, height / 720, 1);
+        controlSize.width *= scale;
+        controlSize.height *= scale;
+        
         // Create mobile control container
         this.mobileControls = {
             diveButton: null,
@@ -851,6 +856,9 @@ export default class RaceScene extends Phaser.Scene {
     adjustUIForMobile() {
         if (!this.isMobile) return;
         
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
         // Move UI elements to avoid overlap with touch controls
         const uiElements = [
             this.timerText, this.strokeText, this.momentumMeter, this.momentumBar,
@@ -858,23 +866,51 @@ export default class RaceScene extends Phaser.Scene {
             this.speedMultiplierText, this.missTapText, this.accuracyText, this.diveBonusText
         ];
         
-        // Scale down UI for mobile
+        // Scale down UI for mobile based on screen size
+        const mobileScale = Math.min(width / 1280, height / 720, 0.8);
         uiElements.forEach(element => {
             if (element && element.setScale) {
-                element.setScale(0.8);
+                element.setScale(mobileScale);
             }
         });
         
-        // Adjust instruction text position
+        // Adjust instruction text position based on screen height
         if (this.instructionText) {
-            this.instructionText.y = 480; // Move up to avoid touch controls
+            this.instructionText.y = height - 140; // Dynamic positioning
         }
         
         // Adjust next key indicator for mobile
         if (this.nextKeyIndicator) {
-            this.nextKeyIndicator.y = 80;
-            this.nextKeyIndicator.setScale(0.9);
+            this.nextKeyIndicator.y = height * 0.15;
+            this.nextKeyIndicator.setScale(mobileScale);
         }
+        
+        // Add orientation change warning if in portrait
+        if (MobileDetection.shouldShowLandscapePrompt()) {
+            this.showOrientationWarning();
+        }
+    }
+    
+    showOrientationWarning() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        // Semi-transparent overlay
+        const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
+        
+        // Warning text
+        const warningText = this.add.text(width / 2, height / 2, 
+            '📱 Rotate to Landscape\nfor Better Experience', {
+            font: 'bold 16px Arial',
+            fill: '#ffff00',
+            align: 'center'
+        }).setOrigin(0.5);
+        
+        // Auto-hide after 3 seconds
+        this.time.delayedCall(3000, () => {
+            overlay.destroy();
+            warningText.destroy();
+        });
     }
     
     animateButtonPress(buttonBg) {
