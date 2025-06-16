@@ -1,5 +1,6 @@
 import Swimmer from '../sprites/Swimmer.js';
 import { raceConfig } from '../config/gameConfig.js';
+import { MobileDetection } from '../utils/MobileDetection.js';
 
 export default class RaceScene extends Phaser.Scene {
     constructor() {
@@ -37,6 +38,14 @@ export default class RaceScene extends Phaser.Scene {
         // Input handling
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        
+        // Mobile detection and touch controls
+        this.isMobile = MobileDetection.isMobile();
+        this.mobileControls = null;
+        
+        if (this.isMobile) {
+            this.createMobileControls();
+        }
         
         // Start countdown
         this.startCountdown();
@@ -248,9 +257,13 @@ export default class RaceScene extends Phaser.Scene {
             padding: { x: 5, y: 3 }
         });
         
-        // Instructions
-        this.instructionText = this.add.text(400, 550, 'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim! Click faster = swim faster!', {
-            font: '16px Arial',
+        // Instructions (adapt for mobile)
+        const instructionText = this.isMobile ? 
+            'TAP DIVE button, then alternate LEFT/RIGHT buttons to swim!' :
+            'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim! Click faster = swim faster!';
+            
+        this.instructionText = this.add.text(400, 550, instructionText, {
+            font: this.isMobile ? '14px Arial' : '16px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 10, y: 5 }
@@ -410,16 +423,21 @@ export default class RaceScene extends Phaser.Scene {
             
             // Update next key indicator
             if (!player.hasDived) {
-                this.nextKeyIndicator.setText('SPACEBAR TO DIVE');
+                this.nextKeyIndicator.setText(this.isMobile ? 'TAP DIVE BUTTON' : 'SPACEBAR TO DIVE');
                 this.nextKeyIndicator.setFill('#ffff00');
             } else {
                 if (player.expectedNextKey === 'left') {
-                    this.nextKeyIndicator.setText('← PRESS LEFT');
+                    this.nextKeyIndicator.setText(this.isMobile ? '← TAP LEFT' : '← PRESS LEFT');
                     this.nextKeyIndicator.setFill('#00ff00');
                 } else {
-                    this.nextKeyIndicator.setText('PRESS RIGHT →');
+                    this.nextKeyIndicator.setText(this.isMobile ? 'TAP RIGHT →' : 'PRESS RIGHT →');
                     this.nextKeyIndicator.setFill('#00ff00');
                 }
+            }
+            
+            // Update mobile button states
+            if (this.isMobile) {
+                this.updateMobileButtonStates(player);
             }
             
             // Update dive/swim status
@@ -687,6 +705,235 @@ export default class RaceScene extends Phaser.Scene {
                     flash.destroy();
                 }
             });
+        }
+    }
+
+    createMobileControls() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const controlSize = MobileDetection.getOptimalControlSize();
+        
+        // Create mobile control container
+        this.mobileControls = {
+            diveButton: null,
+            leftButton: null,
+            rightButton: null,
+            container: this.add.container(0, 0)
+        };
+        
+        // Dive button (center bottom)
+        this.createDiveButton(width / 2, height - 100, controlSize);
+        
+        // Left stroke button
+        this.createLeftButton(width / 2 - 120, height - 100, controlSize);
+        
+        // Right stroke button
+        this.createRightButton(width / 2 + 120, height - 100, controlSize);
+        
+        // Mobile-specific UI adjustments
+        this.adjustUIForMobile();
+    }
+    
+    createDiveButton(x, y, controlSize) {
+        // Button background
+        const diveButtonBg = this.add.circle(x, y, controlSize.width / 2, 0x0066cc, 0.8);
+        diveButtonBg.setStrokeStyle(3, 0x66ccff, 1);
+        
+        // Button text
+        const diveButtonText = this.add.text(x, y, 'DIVE', {
+            font: `bold ${controlSize.fontSize} Arial`,
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+        
+        // Interactive area
+        const diveButton = this.add.circle(x, y, controlSize.width / 2, 0x000000, 0)
+            .setInteractive();
+        
+        // Store references
+        this.mobileControls.diveButton = {
+            bg: diveButtonBg,
+            text: diveButtonText,
+            button: diveButton
+        };
+        
+        // Touch events
+        diveButton.on('pointerdown', () => {
+            this.handleMobileDive();
+            this.animateButtonPress(diveButtonBg);
+        });
+        
+        // Visual feedback
+        diveButton.on('pointerover', () => {
+            diveButtonBg.setFillStyle(0x0088ff, 0.9);
+        });
+        
+        diveButton.on('pointerout', () => {
+            diveButtonBg.setFillStyle(0x0066cc, 0.8);
+        });
+    }
+    
+    createLeftButton(x, y, controlSize) {
+        // Button background
+        const leftButtonBg = this.add.circle(x, y, controlSize.width / 2, 0x00cc66, 0.8);
+        leftButtonBg.setStrokeStyle(3, 0x66ffcc, 1);
+        
+        // Button text
+        const leftButtonText = this.add.text(x, y, '←', {
+            font: `bold ${parseInt(controlSize.fontSize) + 8}px Arial`,
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+        
+        // Interactive area
+        const leftButton = this.add.circle(x, y, controlSize.width / 2, 0x000000, 0)
+            .setInteractive();
+        
+        // Store references
+        this.mobileControls.leftButton = {
+            bg: leftButtonBg,
+            text: leftButtonText,
+            button: leftButton
+        };
+        
+        // Touch events
+        leftButton.on('pointerdown', () => {
+            this.handleMobileStroke('left');
+            this.animateButtonPress(leftButtonBg);
+        });
+        
+        // Visual feedback
+        leftButton.on('pointerover', () => {
+            leftButtonBg.setFillStyle(0x00ff88, 0.9);
+        });
+        
+        leftButton.on('pointerout', () => {
+            leftButtonBg.setFillStyle(0x00cc66, 0.8);
+        });
+    }
+    
+    createRightButton(x, y, controlSize) {
+        // Button background
+        const rightButtonBg = this.add.circle(x, y, controlSize.width / 2, 0xcc6600, 0.8);
+        rightButtonBg.setStrokeStyle(3, 0xffcc66, 1);
+        
+        // Button text
+        const rightButtonText = this.add.text(x, y, '→', {
+            font: `bold ${parseInt(controlSize.fontSize) + 8}px Arial`,
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+        
+        // Interactive area
+        const rightButton = this.add.circle(x, y, controlSize.width / 2, 0x000000, 0)
+            .setInteractive();
+        
+        // Store references
+        this.mobileControls.rightButton = {
+            bg: rightButtonBg,
+            text: rightButtonText,
+            button: rightButton
+        };
+        
+        // Touch events
+        rightButton.on('pointerdown', () => {
+            this.handleMobileStroke('right');
+            this.animateButtonPress(rightButtonBg);
+        });
+        
+        // Visual feedback
+        rightButton.on('pointerover', () => {
+            rightButtonBg.setFillStyle(0xff8800, 0.9);
+        });
+        
+        rightButton.on('pointerout', () => {
+            rightButtonBg.setFillStyle(0xcc6600, 0.8);
+        });
+    }
+    
+    adjustUIForMobile() {
+        if (!this.isMobile) return;
+        
+        // Move UI elements to avoid overlap with touch controls
+        const uiElements = [
+            this.timerText, this.strokeText, this.momentumMeter, this.momentumBar,
+            this.frequencyMeter, this.frequencyBar, this.rateMeter, this.rateBar,
+            this.speedMultiplierText, this.missTapText, this.accuracyText, this.diveBonusText
+        ];
+        
+        // Scale down UI for mobile
+        uiElements.forEach(element => {
+            if (element && element.setScale) {
+                element.setScale(0.8);
+            }
+        });
+        
+        // Adjust instruction text position
+        if (this.instructionText) {
+            this.instructionText.y = 480; // Move up to avoid touch controls
+        }
+        
+        // Adjust next key indicator for mobile
+        if (this.nextKeyIndicator) {
+            this.nextKeyIndicator.y = 80;
+            this.nextKeyIndicator.setScale(0.9);
+        }
+    }
+    
+    animateButtonPress(buttonBg) {
+        this.tweens.add({
+            targets: buttonBg,
+            scaleX: 0.9,
+            scaleY: 0.9,
+            duration: 100,
+            yoyo: true,
+            ease: 'Power2'
+        });
+    }
+    
+    handleMobileDive() {
+        const player = this.swimmers[raceConfig.playerLane];
+        if (!player) return;
+        
+        if (this.canDive) {
+            const diveTimingBonus = this.calculateDiveTimingBonus(this.time.now);
+            player.dive(this.time.now, diveTimingBonus);
+            this.showDiveTimingFeedback(diveTimingBonus);
+            this.canDive = false;
+            
+            // Hide dive button and show stroke buttons
+            this.mobileControls.diveButton.button.setVisible(false);
+            this.mobileControls.diveButton.bg.setVisible(false);
+            this.mobileControls.diveButton.text.setVisible(false);
+        }
+    }
+    
+    handleMobileStroke(direction) {
+        const player = this.swimmers[raceConfig.playerLane];
+        if (!player) return;
+        
+        const quality = player.stroke(this.time.now, direction);
+        
+        // Visual feedback
+        if (quality > 0.8) {
+            this.cameras.main.shake(50, 0.01);
+        }
+        
+        // Update button colors based on expected next key
+        this.updateMobileButtonStates(player);
+    }
+    
+    updateMobileButtonStates(player) {
+        if (!this.isMobile || !this.mobileControls) return;
+        
+        const { leftButton, rightButton } = this.mobileControls;
+        
+        if (player.hasDived) {
+            // Highlight the expected next button
+            if (player.expectedNextKey === 'left') {
+                leftButton.bg.setFillStyle(0x00ff88, 1.0);
+                rightButton.bg.setFillStyle(0xcc6600, 0.6);
+            } else {
+                rightButton.bg.setFillStyle(0xff8800, 1.0);
+                leftButton.bg.setFillStyle(0x00cc66, 0.6);
+            }
         }
     }
 

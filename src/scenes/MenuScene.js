@@ -1,3 +1,5 @@
+import { MobileDetection } from '../utils/MobileDetection.js';
+
 export default class MenuScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MenuScene' });
@@ -6,6 +8,9 @@ export default class MenuScene extends Phaser.Scene {
     create() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
+
+        // Mobile detection
+        this.isMobile = MobileDetection.isMobile();
 
         // Create animated water background
         this.createWaterBackground();
@@ -113,9 +118,10 @@ export default class MenuScene extends Phaser.Scene {
             strokeThickness: 1
         }).setOrigin(0.5);
 
-        const cardWidth = 250;
-        const cardHeight = 80;
-        const spacing = 20;
+        // Adjust card sizes for mobile
+        const cardWidth = this.isMobile ? 200 : 250;
+        const cardHeight = this.isMobile ? 70 : 80;
+        const spacing = this.isMobile ? 15 : 20;
         const totalWidth = (cardWidth * 2) + spacing;
         const startX = (width - totalWidth) / 2;
 
@@ -227,13 +233,17 @@ export default class MenuScene extends Phaser.Scene {
             fill: '#66ccff'
         }).setOrigin(0.5);
 
-        this.add.text(width / 2, height - 75, 'SPACEBAR to dive • LEFT/RIGHT arrows to swim alternately', {
-            font: '14px Arial',
+        const controlText = this.isMobile ? 
+            'TAP buttons to dive and swim alternately' :
+            'SPACEBAR to dive • LEFT/RIGHT arrows to swim alternately';
+            
+        this.add.text(width / 2, height - 75, controlText, {
+            font: this.isMobile ? '12px Arial' : '14px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
 
         this.add.text(width / 2, height - 55, 'Perfect timing = maximum speed!', {
-            font: '12px Arial',
+            font: this.isMobile ? '10px Arial' : '12px Arial',
             fill: '#cccccc'
         }).setOrigin(0.5);
     }
