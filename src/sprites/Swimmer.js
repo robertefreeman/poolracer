@@ -10,9 +10,10 @@ export default class Swimmer {
         // Swimming stats
         this.speed = 0;
         this.baseSpeed = 100;
-        this.rhythmMultiplier = 1.0;
+        this.rhythmMultiplier = isPlayer ? 0.0 : 1.0; // Player starts with no movement
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
+        this.hasStartedSwimming = false;
         this.position = 0; // Distance swum
         this.finished = false;
         this.finishTime = 0;
@@ -75,7 +76,11 @@ export default class Swimmer {
         }
         
         // Update speed based on rhythm
-        this.speed = this.baseSpeed * this.rhythmMultiplier * (this.isPlayer ? 1.0 : this.aiSkill);
+        if (this.isPlayer && !this.hasStartedSwimming) {
+            this.speed = 0; // Player doesn't move until first stroke
+        } else {
+            this.speed = this.baseSpeed * this.rhythmMultiplier * (this.isPlayer ? 1.0 : this.aiSkill);
+        }
     }
     
     updateAI(time, delta) {
@@ -124,6 +129,15 @@ export default class Swimmer {
         const timeSinceLastStroke = time - this.lastStrokeTime;
         this.lastStrokeTime = time;
         this.strokeCount++;
+        
+        // Mark that player has started swimming
+        if (this.isPlayer) {
+            this.hasStartedSwimming = true;
+            // Start with good rhythm on first stroke
+            if (this.strokeCount === 1) {
+                this.rhythmMultiplier = 1.0;
+            }
+        }
         
         // Calculate rhythm quality (ideal timing is around 800ms)
         const idealTiming = 800;
