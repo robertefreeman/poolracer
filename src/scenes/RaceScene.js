@@ -168,6 +168,14 @@ export default class RaceScene extends Phaser.Scene {
             padding: { x: 5, y: 3 }
         });
         
+        // Dive bonus display
+        this.diveBonusText = this.add.text(10, 285, 'Dive Bonus: 1.0x', {
+            font: '12px Arial',
+            fill: '#ffffff',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 3 }
+        });
+        
         // Instructions
         this.instructionText = this.add.text(400, 550, 'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim! Click faster = swim faster!', {
             font: '16px Arial',
@@ -226,6 +234,7 @@ export default class RaceScene extends Phaser.Scene {
         this.raceStarted = true;
         this.countdownActive = false;
         this.startTime = this.time.now;
+        this.raceStartTime = this.time.now; // Track exact race start for dive timing
         
         // Allow dive start for a brief period
         this.canDive = true;
@@ -311,6 +320,22 @@ export default class RaceScene extends Phaser.Scene {
                 this.accuracyText.setFill('#ff0000'); // Red - poor
             }
             
+            // Update dive bonus display
+            this.diveBonusText.setText(`Dive Bonus: ${player.diveBonus.toFixed(2)}x`);
+            
+            // Color dive bonus text based on bonus level
+            if (player.diveBonus >= 1.8) {
+                this.diveBonusText.setFill('#00ff00'); // Green - excellent dive
+            } else if (player.diveBonus >= 1.4) {
+                this.diveBonusText.setFill('#66ff66'); // Light green - great dive
+            } else if (player.diveBonus >= 1.2) {
+                this.diveBonusText.setFill('#ccff00'); // Yellow-green - good dive
+            } else if (player.diveBonus > 1.0) {
+                this.diveBonusText.setFill('#ffff00'); // Yellow - small bonus
+            } else {
+                this.diveBonusText.setFill('#ffffff'); // White - no bonus
+            }
+            
             // Update next key indicator
             if (!player.hasDived) {
                 this.nextKeyIndicator.setText('SPACEBAR TO DIVE');
@@ -348,7 +373,9 @@ export default class RaceScene extends Phaser.Scene {
         
         // Dive start
         if (this.canDive && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-            player.dive(time);
+            const diveTimingBonus = this.calculateDiveTimingBonus(time);
+            player.dive(time, diveTimingBonus);
+            this.showDiveTimingFeedback(diveTimingBonus);
             this.canDive = false;
         }
         
@@ -383,6 +410,118 @@ export default class RaceScene extends Phaser.Scene {
         }
     }
     
+    calculateDiveTimingBonus(currentTime) {
+        const timeSinceRaceStart = currentTime - this.raceStartTime;
+        
+        // Perfect start: within 100ms of race start (0.1 seconds)
+        if (timeSinceRaceStart <= 100) {
+            return { multiplier: 2.0, type: 'perfect' };
+        }
+        // Excellent start: within 200ms
+        else if (timeSinceRaceStart <= 200) {
+            return { multiplier: 1.8, type: 'excellent' };
+        }
+        // Great start: within 300ms
+        else if (timeSinceRaceStart <= 300) {
+            return { multiplier: 1.6, type: 'great' };
+        }
+        // Good start: within 500ms
+        else if (timeSinceRaceStart <= 500) {
+            return { multiplier: 1.4, type: 'good' };
+        }
+        // Normal start: within 1000ms
+        else if (timeSinceRaceStart <= 1000) {
+            return { multiplier: 1.0, type: 'normal' };
+        }
+        // Late start: after 1000ms (shouldn't happen as canDive becomes false)
+        else {
+            return { multiplier: 0.8, type: 'late' };
+        }
+    }
+    
+    showDiveTimingFeedback(diveBonus) {
+        let feedbackText = '';
+        let feedbackColor = '#ffffff';
+        
+        switch (diveBonus.type) {
+            case 'perfect':
+                feedbackText = 'PERFECT START!';
+                feedbackColor = '#00ff00';
+                break;
+            case 'excellent':
+                feedbackText = 'EXCELLENT START!';
+                feedbackColor = '#66ff66';
+                break;
+            case 'great':
+                feedbackText = 'GREAT START!';
+                feedbackColor = '#99ff99';
+                break;
+            case 'good':
+                feedbackText = 'GOOD START!';
+                feedbackColor = '#ccff00';
+                break;
+            case 'normal':
+                feedbackText = 'START!';
+                feedbackColor = '#ffffff';
+                break;
+            case 'late':
+                feedbackText = 'LATE START';
+                feedbackColor = '#ff6666';
+                break;
+        }
+        
+        // Create feedback text
+        const feedback = this.add.text(400, 200, feedbackText, {
+            font: 'bold 36px Arial',
+            fill: feedbackColor,
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        // Add multiplier text
+        const multiplierText = this.add.text(400, 240, `${diveBonus.multiplier.toFixed(1)}x Start Bonus!`, {
+            font: 'bold 24px Arial',
+            fill: feedbackColor,
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+        
+        // Animate feedback
+        this.tweens.add({
+            targets: [feedback, multiplierText],
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 200,
+            yoyo: true,
+            ease: 'Power2'
+        });
+        
+        // Fade out feedback
+        this.tweens.add({
+            targets: [feedback, multiplierText],
+            alpha: 0,
+            duration: 2000,
+            delay: 1000,
+            onComplete: () => {
+                feedback.destroy();
+                multiplierText.destroy();
+            }
+        });
+        
+        // Screen flash for perfect start
+        if (diveBonus.type === 'perfect') {
+            const flash = this.add.rectangle(400, 300, 800, 600, 0xffffff, 0.3);
+            this.tweens.add({
+                targets: flash,
+                alpha: 0,
+                duration: 300,
+                onComplete: () => {
+                    flash.destroy();
+                }
+            });
+        }
+    }
+
     endRace() {
         this.raceFinished = true;
         

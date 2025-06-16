@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dive Timing - Rolling Hills Racers</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #game-container {
+            border: 3px solid #66ccff;
+            border-radius: 12px;
+            box-shadow: 
+                0 0 20px rgba(102, 204, 255, 0.3),
+                0 0 40px rgba(102, 204, 255, 0.1),
+                inset 0 0 20px rgba(0, 102, 204, 0.1);
+            background: #000;
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+        #game-container canvas {
+            display: block;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

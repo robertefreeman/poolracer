@@ -23,6 +23,10 @@ export default class Swimmer {
         this.finished = false;
         this.finishTime = 0;
         
+        // Dive timing bonus tracking
+        this.diveBonus = 1.0; // Multiplier from dive timing
+        this.diveBonusDecayRate = 0.02; // Rate at which dive bonus decays
+        
         // Click frequency tracking (Option B)
         this.clickHistory = []; // Store timestamps of recent clicks
         this.clickFrequencyWindow = 2000; // Track clicks over last 2 seconds
@@ -104,8 +108,13 @@ export default class Swimmer {
                 // Decay momentum over time when not tapping
                 this.momentum = Math.max(0, this.momentum - this.momentumDecay * (delta / 1000));
                 
-                // Calculate speed with frequency and click rate multipliers
-                this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier;
+                // Decay dive bonus over time (gradually lose the advantage)
+                if (this.diveBonus > 1.0) {
+                    this.diveBonus = Math.max(1.0, this.diveBonus - this.diveBonusDecayRate * (delta / 1000));
+                }
+                
+                // Calculate speed with frequency, click rate, and dive bonus multipliers
+                this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier * this.diveBonus;
             }
         } else {
             // AI uses old rhythm system
@@ -304,25 +313,61 @@ export default class Swimmer {
         return wasCorrectKey ? 1.0 : 0;
     }
     
-    dive(time) {
+    dive(time, diveTimingBonus = null) {
         if (this.isPlayer) {
             // Mark that player has dived and can now swim
             this.hasDived = true;
-            this.momentum = 80; // Initial momentum from dive
+            
+            // Calculate initial momentum with timing bonus
+            let baseMomentum = 80;
+            if (diveTimingBonus) {
+                baseMomentum = baseMomentum * diveTimingBonus.multiplier;
+                // Store the dive bonus for continued momentum advantage
+                this.diveBonus = diveTimingBonus.multiplier;
+                this.diveBonusDecayRate = 0.02; // Bonus decays by 2% per second
+            } else {
+                this.diveBonus = 1.0;
+            }
+            
+            this.momentum = Math.min(this.maxMomentum, baseMomentum);
             this.lastStrokeTime = time;
         } else {
             // AI dive (simple)
             this.position += 20;
         }
         
-        // Visual dive effect
+        // Enhanced visual dive effect based on timing
+        const effectIntensity = diveTimingBonus ? diveTimingBonus.multiplier : 1.0;
+        
         this.scene.tweens.add({
             targets: [this.body, this.head, this.leftArm, this.rightArm],
-            scaleX: 1.5,
-            duration: 300,
+            scaleX: 1.2 + (effectIntensity * 0.3),
+            duration: 200 + (effectIntensity * 100),
             yoyo: true,
             ease: 'Power2'
         });
+        
+        // Add splash effect for good dives
+        if (diveTimingBonus && diveTimingBonus.multiplier > 1.4) {
+            // Create splash particles
+            for (let i = 0; i < 5; i++) {
+                const splash = this.scene.add.circle(
+                    this.x + Phaser.Math.Between(-10, 10),
+                    this.y + Phaser.Math.Between(-5, 5),
+                    Phaser.Math.Between(2, 4),
+                    0x87ceeb
+                );
+                
+                this.scene.tweens.add({
+                    targets: splash,
+                    x: splash.x + Phaser.Math.Between(-20, 20),
+                    y: splash.y + Phaser.Math.Between(-15, 15),
+                    alpha: 0,
+                    duration: 500,
+                    onComplete: () => splash.destroy()
+                });
+            }
+        }
     }
     
     destroy() {
