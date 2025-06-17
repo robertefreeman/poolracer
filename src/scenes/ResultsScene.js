@@ -77,65 +77,83 @@ export default class ResultsScene extends Phaser.Scene {
 
     displayResults() {
         const width = this.cameras.main.width;
-        const startY = 140;
+        const startY = 160;
 
-        this.add.text(width / 2, startY - 20, 'Final Times:', {
+        this.add.text(width / 2, startY - 30, 'Final Times:', {
             font: 'bold 20px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
 
+        // Create table headers
+        this.add.text(80, startY - 5, 'Place', {
+            font: 'bold 14px Arial',
+            fill: '#aaaaaa'
+        }).setOrigin(0.5);
+
+        this.add.text(200, startY - 5, 'Team', {
+            font: 'bold 14px Arial',
+            fill: '#aaaaaa'
+        }).setOrigin(0.5);
+
+        this.add.text(350, startY - 5, 'Time', {
+            font: 'bold 14px Arial',
+            fill: '#aaaaaa'
+        }).setOrigin(0.5);
+
+        this.add.text(450, startY - 5, 'Strokes', {
+            font: 'bold 14px Arial',
+            fill: '#aaaaaa'
+        }).setOrigin(0.5);
+
+        this.add.text(550, startY - 5, 'Stats', {
+            font: 'bold 14px Arial',
+            fill: '#aaaaaa'
+        }).setOrigin(0.5);
+
         this.results.forEach((result, index) => {
-            const y = startY + (index * 40);
+            const y = startY + 25 + (index * 50); // Increased spacing to 50px
             const isPlayer = result.swimmer.isPlayer;
             
             // Place
             const placeText = this.getPlaceText(result.place);
-            this.add.text(150, y, placeText, {
+            this.add.text(80, y, placeText, {
                 font: 'bold 18px Arial',
                 fill: isPlayer ? '#ffff00' : '#ffffff'
-            });
+            }).setOrigin(0.5);
 
-            // Team (based on lane)
-            const teamName = this.getTeamName(result.swimmer.lane);
-            this.add.text(220, y, teamName, {
+            // Team (based on lane) - shortened team names
+            const teamName = this.getShortTeamName(result.swimmer.lane);
+            this.add.text(200, y, teamName, {
                 font: '16px Arial',
                 fill: isPlayer ? '#ffff00' : '#cccccc'
-            });
+            }).setOrigin(0.5);
 
             // Time
-            this.add.text(320, y, `${result.time.toFixed(2)}s`, {
+            this.add.text(350, y, `${result.time.toFixed(2)}s`, {
                 font: '18px Arial',
                 fill: isPlayer ? '#ffff00' : '#ffffff'
-            });
-
-            // Player indicator
-            if (isPlayer) {
-                this.add.text(420, y, '(YOU)', {
-                    font: 'bold 16px Arial',
-                    fill: '#ff6b35'
-                });
-            }
+            }).setOrigin(0.5);
 
             // Stroke count
-            this.add.text(500, y, `${result.swimmer.strokeCount} strokes`, {
-                font: '14px Arial',
+            this.add.text(450, y, `${result.swimmer.strokeCount}`, {
+                font: '16px Arial',
                 fill: '#aaaaaa'
-            });
-            
-            // Add miss tap count and accuracy for player
+            }).setOrigin(0.5);
+
+            // Player indicator and stats
             if (isPlayer) {
+                this.add.text(550, y - 10, '(YOU)', {
+                    font: 'bold 14px Arial',
+                    fill: '#ff6b35'
+                }).setOrigin(0.5);
+                
                 const accuracy = result.swimmer.totalTapCount > 0 ? 
                     ((result.swimmer.totalTapCount - result.swimmer.missTapCount) / result.swimmer.totalTapCount * 100) : 100;
                 
-                this.add.text(620, y, `${result.swimmer.missTapCount} misses`, {
-                    font: '14px Arial',
-                    fill: '#ff6666'
-                });
-                
-                this.add.text(720, y + 20, `${accuracy.toFixed(0)}% accuracy`, {
+                this.add.text(550, y + 8, `${accuracy.toFixed(0)}% acc`, {
                     font: '12px Arial',
                     fill: accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000'
-                });
+                }).setOrigin(0.5);
             }
         });
     }
@@ -233,6 +251,12 @@ export default class ResultsScene extends Phaser.Scene {
         // Ravensworth Ravens: lanes 2,4,6 (indices 1,3,5)
         const isSeahawks = lane % 2 === 0;
         return isSeahawks ? 'RH Seahawks' : 'Ravensworth Ravens';
+    }
+
+    getShortTeamName(lane) {
+        // Shortened team names for better layout
+        const isSeahawks = lane % 2 === 0;
+        return isSeahawks ? 'Seahawks' : 'Ravens';
     }
 
     createButtons() {

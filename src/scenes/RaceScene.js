@@ -265,15 +265,27 @@ export default class RaceScene extends Phaser.Scene {
             padding: { x: 5, y: 3 }
         });
         
-        // Instructions (adapt for mobile)
+        // Instructions (adapt for mobile) - better positioned and styled
         const instructionText = this.isMobile ? 
             'TAP DIVE button, then alternate LEFT/RIGHT buttons to swim!' :
-            'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim! Click faster = swim faster!';
+            'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim!';
             
-        this.instructionText = this.add.text(400, 550, instructionText, {
-            font: this.isMobile ? '14px Arial' : '16px Arial',
+        this.instructionText = this.add.text(width / 2, height - 100, instructionText, {
+            font: this.isMobile ? 'bold 16px Arial' : 'bold 18px Arial',
             fill: '#ffffff',
-            backgroundColor: '#000000',
+            stroke: '#000000',
+            strokeThickness: 3,
+            backgroundColor: '#000000cc',
+            padding: { x: 15, y: 8 }
+        }).setOrigin(0.5);
+
+        // Additional tip - positioned below instructions
+        this.add.text(width / 2, height - 70, 'Perfect timing = maximum speed!', {
+            font: 'bold 14px Arial',
+            fill: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 2,
+            backgroundColor: '#000000cc',
             padding: { x: 10, y: 5 }
         }).setOrigin(0.5);
         
@@ -924,9 +936,13 @@ export default class RaceScene extends Phaser.Scene {
             }
         });
         
-        // Adjust instruction text position based on screen height
+        // Adjust instruction text position based on screen height and mobile controls
         if (this.instructionText) {
-            this.instructionText.y = height - 140; // Dynamic positioning
+            if (this.isMobile) {
+                this.instructionText.y = height - 180; // Higher up to avoid mobile controls
+            } else {
+                this.instructionText.y = height - 80; // Standard position for desktop
+            }
         }
         
         // Adjust next key indicator for mobile
