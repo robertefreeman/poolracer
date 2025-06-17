@@ -348,11 +348,26 @@ export default class RaceScene extends Phaser.Scene {
         const raceTime = (time - this.startTime) / 1000;
         this.timerText.setText(`Time: ${raceTime.toFixed(2)}`);
         
+        // Failsafe: End race after 60 seconds regardless
+        if (raceTime > 60) {
+            console.log('FAILSAFE: Race timeout after 60 seconds');
+            this.forceEndRace();
+            return;
+        }
+        
         // Handle player input
         this.handleInput(time);
         
         // Update all swimmers
         this.swimmers.forEach(swimmer => swimmer.update(time, delta));
+        
+        // Check if any swimmer has finished and force end if needed
+        const anyFinished = this.swimmers.some(swimmer => swimmer.finished);
+        if (anyFinished && this.finishedSwimmers.length === 0) {
+            console.log('FAILSAFE: Swimmer finished but not recorded, forcing race end');
+            this.forceEndRace();
+            return;
+        }
         
         // Update momentum meter and UI for player
         const player = this.swimmers[raceConfig.playerLane];
@@ -511,8 +526,14 @@ export default class RaceScene extends Phaser.Scene {
     }
     
     swimmerFinished(swimmer) {
+        console.log(`=== SWIMMER FINISHED ===`);
+        console.log(`Swimmer: Lane ${swimmer.lane}, Player: ${swimmer.isPlayer}, Position: ${swimmer.position}`);
+        console.log(`Current finished count: ${this.finishedSwimmers.length}, Total swimmers: ${this.swimmers.length}`);
+        
         const place = this.finishedSwimmers.length + 1;
         const time = (swimmer.finishTime - this.startTime) / 1000;
+        
+        console.log(`Assigning place ${place}, time ${time.toFixed(2)}s`);
         
         this.finishedSwimmers.push({
             swimmer: swimmer,
@@ -523,9 +544,14 @@ export default class RaceScene extends Phaser.Scene {
         // Create finish celebration effect
         this.createFinishCelebration(swimmer, place);
         
+        console.log(`After adding: ${this.finishedSwimmers.length} finished out of ${this.swimmers.length} total`);
+        
         // Check if race is complete
-        if (this.finishedSwimmers.length === this.swimmers.length) {
+        if (this.finishedSwimmers.length >= this.swimmers.length) {
+            console.log('All swimmers finished, ending race...');
             this.endRace();
+        } else {
+            console.log(`Waiting for ${this.swimmers.length - this.finishedSwimmers.length} more swimmers to finish`);
         }
     }
     
@@ -997,21 +1023,74 @@ export default class RaceScene extends Phaser.Scene {
     }
 
     endRace() {
-        console.log('Race ending, finished swimmers:', this.finishedSwimmers.length);
+        console.log('=== RACE ENDING ===');
+        console.log('Finished swimmers count:', this.finishedSwimmers.length);
+        console.log('Total swimmers:', this.swimmers.length);
+        console.log('Race finished flag:', this.raceFinished);
+        
+        // Prevent multiple calls
+        if (this.raceFinished) {
+            console.log('Race already finished, ignoring duplicate call');
+            return;
+        }
+        
         this.raceFinished = true;
         
-        // Simple automatic transition with short delay
-        this.time.delayedCall(1000, () => {
-            this.goToResults();
-        });
+        // Add visual indicator that race is ending
+        const endingText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 'RACE COMPLETE!', {
+            font: 'bold 32px Arial',
+            fill: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        // Immediate transition - no delay to prevent hanging
+        console.log('Transitioning to results immediately...');
+        this.goToResults();
     }
     
+    forceEndRace() {
+        console.log('=== FORCE ENDING RACE ===');
+        
+        if (this.raceFinished) {
+            console.log('Race already finished, ignoring force end');
+            return;
+        }
+        
+        this.raceFinished = true;
+        
+        // Create results for all swimmers based on their current positions
+        this.finishedSwimmers = [];
+        
+        // Sort swimmers by position (furthest first)
+        const sortedSwimmers = [...this.swimmers].sort((a, b) => b.position - a.position);
+        
+        sortedSwimmers.forEach((swimmer, index) => {
+            const place = index + 1;
+            const time = swimmer.finished ? 
+                (swimmer.finishTime - this.startTime) / 1000 : 
+                (this.time.now - this.startTime) / 1000; // Use current time if not finished
+            
+            this.finishedSwimmers.push({
+                swimmer: swimmer,
+                time: time,
+                place: place
+            });
+            
+            console.log(`Swimmer ${swimmer.lane} (${swimmer.isPlayer ? 'PLAYER' : 'AI'}): Place ${place}, Time ${time.toFixed(2)}s, Position ${swimmer.position.toFixed(0)}`);
+        });
+        
+        console.log('Force ending complete, going to results...');
+        this.goToResults();
+    }
+
     goToResults() {
         console.log('goToResults called');
         try {
-            // Validate data before transition
+            // Always ensure we have results data
             if (!this.finishedSwimmers || this.finishedSwimmers.length === 0) {
-                console.error('No finished swimmers data!');
+                console.error('No finished swimmers data! Creating emergency results...');
+                this.forceEndRace();
                 return;
             }
             
