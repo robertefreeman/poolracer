@@ -1,11 +1,14 @@
 // Fixed main.js - step by step restoration
 console.log('Loading main.js...');
 
-// Import scenes one by one to identify issues
+// Import scenes and utilities
 import PreloadScene from './scenes/PreloadScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import RaceScene from './scenes/RaceScene.js';
 import ResultsScene from './scenes/ResultsScene.js';
+import HighScoreScene from './scenes/HighScoreScene.js';
+import OrientationScene from './scenes/OrientationScene.js';
+import { MobileDetection } from './utils/MobileDetection.js';
 
 // Simple but working configuration
 const config = {
@@ -18,7 +21,7 @@ const config = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
-    scene: [PreloadScene, MenuScene, RaceScene, ResultsScene]
+    scene: [PreloadScene, OrientationScene, MenuScene, RaceScene, ResultsScene, HighScoreScene]
 };
 
 console.log('Creating game with config:', config);
@@ -27,5 +30,19 @@ console.log('Creating game with config:', config);
 const game = new Phaser.Game(config);
 
 console.log('Game created:', game);
+
+// Add simple mobile handling (without complex resizing)
+if (MobileDetection.isMobile()) {
+    console.log('Mobile device detected');
+    
+    // Simple orientation check
+    if (MobileDetection.shouldShowLandscapePrompt()) {
+        setTimeout(() => {
+            if (game.scene.isActive('MenuScene')) {
+                game.scene.start('OrientationScene');
+            }
+        }, 1000);
+    }
+}
 
 export default game;
