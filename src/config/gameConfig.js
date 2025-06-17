@@ -20,7 +20,7 @@ export const gameConfig = {
             debug: false
         }
     },
-    backgroundColor: '#0066cc'
+    backgroundColor: '#87ceeb'
 };
 
 export const raceConfig = {

@@ -78,19 +78,22 @@ export default class Swimmer {
         const isSeahawks = this.lane % 2 === 0; // Even lane indices (0,2,4) are Seahawks
         
         // Color scheme
-        let skinColor, swimsuitColor, teamName;
+        let skinColor, swimsuitColor, teamName, capColor;
         if (this.isPlayer) {
             skinColor = 0xffdbac; // Skin tone
-            swimsuitColor = 0x0066cc; // Blue swimsuit
+            swimsuitColor = 0x008b8b; // Teal swimsuit for RH Seahawks
             teamName = 'RH Seahawks';
+            capColor = 0xc0c0c0; // Silver cap
         } else if (isSeahawks) {
             skinColor = 0xffdbac; // Skin tone
-            swimsuitColor = 0x0066cc; // Blue swimsuit  
+            swimsuitColor = 0x008b8b; // Teal swimsuit for RH Seahawks
             teamName = 'RH Seahawks';
+            capColor = 0xc0c0c0; // Silver cap
         } else {
             skinColor = 0xffdbac; // Skin tone
             swimsuitColor = 0x1a1a4d; // Navy blue swimsuit
             teamName = 'Ravensworth Ravens';
+            capColor = 0x000080; // Navy blue cap
         }
         
         // All swimmers face toward finish line (right side)
@@ -98,11 +101,11 @@ export default class Swimmer {
         let headX, bodyX, armX, legX;
         
         if (this.strokeType === 'backstroke') {
-            // Backstroke: swimmer on back, head toward start, feet toward finish
-            headX = this.x - 12; // Head toward start (left)
+            // Backstroke: swimmer on back, head toward finish (leading), feet toward start
+            headX = this.x + 12; // Head toward finish (right) - leading the race
             bodyX = this.x;
-            armX = this.x - 6;
-            legX = this.x + 8; // Legs toward finish (right)
+            armX = this.x + 6;
+            legX = this.x - 8; // Legs toward start (left)
         } else {
             // All other strokes: head toward finish, standard forward position
             headX = this.x + 12; // Head toward finish (right)
@@ -114,8 +117,13 @@ export default class Swimmer {
         // Create swimmer body (torso in swimsuit)
         this.body = this.scene.add.rectangle(bodyX, this.y, 20, 10, swimsuitColor);
         
-        // Create swimmer head (skin tone)
+        // Create swimmer head (skin tone) - improved appearance
         this.head = this.scene.add.circle(headX, this.y, 5, skinColor);
+        this.head.setStrokeStyle(1, 0xd4a574, 1); // Subtle darker outline for better definition
+        
+        // Create swim cap (half the size of head)
+        this.cap = this.scene.add.circle(headX, this.y - 1, 2.5, capColor);
+        this.cap.setStrokeStyle(0.5, 0x000000, 0.3); // Subtle outline for cap
         
         // Create arms (skin tone)
         this.leftArm = this.scene.add.rectangle(armX, this.y - 7, 8, 3, skinColor);
@@ -126,7 +134,7 @@ export default class Swimmer {
         this.rightLeg = this.scene.add.rectangle(legX, this.y + 4, 12, 3, skinColor);
         
         // Create feet (small skin tone circles) - NEW!
-        const feetX = this.strokeType === 'backstroke' ? legX + 8 : legX - 8;
+        const feetX = legX - 8; // Feet are always toward start for all strokes now
         this.leftFoot = this.scene.add.circle(feetX, this.y - 4, 2, skinColor);
         this.rightFoot = this.scene.add.circle(feetX, this.y + 4, 2, skinColor);
         
@@ -136,9 +144,9 @@ export default class Swimmer {
             this.body.setRotation(0); // Keep body normal for backstroke
         }
         
-        // Group all parts
+        // Group all parts including the cap
         this.sprite = this.scene.add.group([
-            this.body, this.head, this.leftArm, this.rightArm, 
+            this.body, this.head, this.cap, this.leftArm, this.rightArm, 
             this.leftLeg, this.rightLeg, this.leftFoot, this.rightFoot
         ]);
         
@@ -253,6 +261,7 @@ export default class Swimmer {
             const bobOffset = Math.sin(time * 0.008) * 2;
             this.body.y = this.y + bobOffset;
             this.head.y = this.y + bobOffset;
+            this.cap.y = this.y + bobOffset - 1; // Cap moves with head but slightly offset
             // Don't bob arms and legs as they have their own stroke animations
         }
     }
@@ -303,9 +312,9 @@ export default class Swimmer {
                 this.leftArm.rotation = backstrokePhase * 0.6;
                 this.rightArm.rotation = -backstrokePhase * 0.6;
                 
-                // Arms extend back over head for backstroke
-                this.leftArm.x = this.x - 6 - Math.abs(backstrokePhase) * 4;
-                this.rightArm.x = this.x - 6 - Math.abs(backstrokePhase) * 4;
+                // Arms extend back over head for backstroke (but swimmer is now oriented forward)
+                this.leftArm.x = this.x + 6 + Math.abs(backstrokePhase) * 4;
+                this.rightArm.x = this.x + 6 + Math.abs(backstrokePhase) * 4;
                 
                 // Flutter kick for backstroke (similar to freestyle but on back)
                 const backKick = Math.sin(this.animFrame * Math.PI / 2) * (2 + intensity);
@@ -406,6 +415,8 @@ export default class Swimmer {
                 // Head bobs with dolphin motion (ensure head stays at front)
                 this.head.x = this.x + 12; // Keep head at front
                 this.head.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
+                this.cap.x = this.x + 12; // Cap follows head
+                this.cap.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3 - 1;
                 break;
         }
     }
@@ -462,6 +473,8 @@ export default class Swimmer {
         this.body.y += deltaY;
         this.head.x += deltaX;
         this.head.y += deltaY;
+        this.cap.x += deltaX;
+        this.cap.y += deltaY;
         this.leftArm.x += deltaX;
         this.leftArm.y += deltaY;
         this.rightArm.x += deltaX;
@@ -837,6 +850,7 @@ export default class Swimmer {
         // Destroy individual components
         if (this.body) this.body.destroy();
         if (this.head) this.head.destroy();
+        if (this.cap) this.cap.destroy();
         if (this.leftArm) this.leftArm.destroy();
         if (this.rightArm) this.rightArm.destroy();
         if (this.leftLeg) this.leftLeg.destroy();
