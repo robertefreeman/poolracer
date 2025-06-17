@@ -183,7 +183,8 @@ export default class Swimmer {
             this.updatePosition(this.x, newY);
             
             // Check for finish in portrait mode
-            const finishDistance = this.scene.portraitConfig ? this.scene.portraitConfig.poolLength : 500;
+            const finishDistance = (this.scene.portraitConfig && this.scene.portraitConfig.poolLength) ? 
+                this.scene.portraitConfig.poolLength : 500;
             if (this.position >= finishDistance && !this.finished) {
                 this.finished = true;
                 this.finishTime = time;

@@ -201,6 +201,7 @@ export default class RaceScene extends Phaser.Scene {
         }
         
         // Vertical lane dividers for portrait mode
+        const laneWidth = config && config.laneWidth ? config.laneWidth : width * 0.8 / raceConfig.lanes;
         const startX = (width - (laneWidth * raceConfig.lanes)) / 2;
         for (let i = 1; i < raceConfig.lanes; i++) {
             const x = startX + (i * laneWidth);
@@ -249,7 +250,8 @@ export default class RaceScene extends Phaser.Scene {
         });
         
         // Halfway marker
-        const halfwayY = 100 + (config.poolLength / 2);
+        const poolLength = config && config.poolLength ? config.poolLength : 500;
+        const halfwayY = 100 + (poolLength / 2);
         const halfwayMarker = this.add.rectangle(width / 2, halfwayY, width * 0.9, 2, 0xcccccc);
         
         this.add.text(width / 2, halfwayY - 20, '12.5m', {
@@ -276,7 +278,7 @@ export default class RaceScene extends Phaser.Scene {
         if (this.isPortrait && this.portraitConfig) {
             // Portrait mode: swimmers in vertical lanes
             const config = this.portraitConfig;
-            const laneWidth = config.laneWidth;
+            const laneWidth = config && config.laneWidth ? config.laneWidth : width * 0.8 / raceConfig.lanes;
             const startX = (width - (laneWidth * raceConfig.lanes)) / 2;
             
             for (let i = 0; i < raceConfig.lanes; i++) {
