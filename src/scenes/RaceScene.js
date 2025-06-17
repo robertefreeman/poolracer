@@ -16,10 +16,16 @@ export default class RaceScene extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
+        // Mobile detection and layout configuration
+        this.isMobile = MobileDetection.isMobile();
+        this.isPortrait = MobileDetection.isPortrait();
+        this.portraitConfig = MobileDetection.getPortraitLayoutConfig();
+        this.mobileControls = null;
+
         // Create pool background
         this.add.rectangle(width / 2, height / 2, width, height, 0x0066cc);
         
-        // Create pool lanes
+        // Create pool lanes (adapted for portrait if needed)
         this.createPool();
         
         // Create swimmers
@@ -40,10 +46,7 @@ export default class RaceScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         
-        // Mobile detection and touch controls
-        this.isMobile = MobileDetection.isMobile();
-        this.mobileControls = null;
-        
+        // Create mobile controls if needed
         if (this.isMobile) {
             this.createMobileControls();
         }
@@ -55,6 +58,13 @@ export default class RaceScene extends Phaser.Scene {
     createPool() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
+        
+        // Adapt pool layout for portrait mode
+        if (this.isPortrait && this.portraitConfig) {
+            this.createPortraitPool();
+            return;
+        }
+        
         const laneHeight = height / raceConfig.lanes;
         
         // Enhanced pool background with gradient
@@ -157,24 +167,154 @@ export default class RaceScene extends Phaser.Scene {
         });
     }
     
-    createSwimmers() {
+    createPortraitPool() {
+        const width = this.cameras.main.width;
         const height = this.cameras.main.height;
-        const laneHeight = height / raceConfig.lanes;
+        const config = this.portraitConfig;
+        const laneWidth = config.laneWidth;
         
-        for (let i = 0; i < raceConfig.lanes; i++) {
-            const y = (i + 0.5) * laneHeight;
-            const isPlayer = i === raceConfig.playerLane;
-            
-            const swimmer = new Swimmer(
-                this,
-                80,
-                y,
-                i,
-                isPlayer,
-                this.strokeType
+        // Enhanced pool background with gradient
+        const poolGradient = this.add.rectangle(width / 2, height / 2, width, height, 0x0066cc);
+        
+        // Add water effects
+        this.waterEffects = [];
+        for (let i = 0; i < 10; i++) {
+            const bubble = this.add.circle(
+                Phaser.Math.Between(50, width - 50),
+                Phaser.Math.Between(100, height - 200),
+                Phaser.Math.Between(2, 6),
+                0x87ceeb,
+                0.3
             );
             
-            this.swimmers.push(swimmer);
+            this.waterEffects.push(bubble);
+            
+            this.tweens.add({
+                targets: bubble,
+                x: bubble.x + Phaser.Math.Between(-20, 20),
+                alpha: 0,
+                duration: Phaser.Math.Between(3000, 6000),
+                repeat: -1,
+                yoyo: true,
+                ease: 'Sine.easeInOut'
+            });
+        }
+        
+        // Vertical lane dividers for portrait mode
+        const startX = (width - (laneWidth * raceConfig.lanes)) / 2;
+        for (let i = 1; i < raceConfig.lanes; i++) {
+            const x = startX + (i * laneWidth);
+            
+            // Lane rope (vertical dashed line)
+            for (let y = 100; y < height - 200; y += 20) {
+                const rope = this.add.rectangle(x, y + 10, 2, 10, 0xffffff);
+                
+                this.tweens.add({
+                    targets: rope,
+                    x: x + Math.sin((y / 100) * Math.PI) * 2,
+                    duration: 2000 + (y * 10),
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'Sine.easeInOut'
+                });
+            }
+        }
+        
+        // Pool edges
+        this.add.rectangle(width / 2, 90, width * 0.9, 10, 0x333333);
+        this.add.rectangle(width / 2, height - 190, width * 0.9, 10, 0x333333);
+        
+        // Start and finish lines (horizontal for portrait)
+        const startLine = this.add.rectangle(width / 2, 100, width * 0.9, 4, 0x00ff00);
+        const finishLine = this.add.rectangle(width / 2, height - 200, width * 0.9, 4, 0xff0000);
+        
+        // Animated lines
+        this.tweens.add({
+            targets: startLine,
+            alpha: 0.6,
+            duration: 1000,
+            repeat: -1,
+            yoyo: true,
+            ease: 'Sine.easeInOut'
+        });
+        
+        this.tweens.add({
+            targets: finishLine,
+            alpha: 0.8,
+            scaleY: 1.2,
+            duration: 800,
+            repeat: -1,
+            yoyo: true,
+            ease: 'Sine.easeInOut'
+        });
+        
+        // Halfway marker
+        const halfwayY = 100 + (config.poolLength / 2);
+        const halfwayMarker = this.add.rectangle(width / 2, halfwayY, width * 0.9, 2, 0xcccccc);
+        
+        this.add.text(width / 2, halfwayY - 20, '12.5m', {
+            font: '12px Arial',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 1
+        }).setOrigin(0.5);
+        
+        this.tweens.add({
+            targets: halfwayMarker,
+            alpha: 0.7,
+            duration: 1500,
+            repeat: -1,
+            yoyo: true,
+            ease: 'Sine.easeInOut'
+        });
+    }
+    
+    createSwimmers() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        
+        if (this.isPortrait && this.portraitConfig) {
+            // Portrait mode: swimmers in vertical lanes
+            const config = this.portraitConfig;
+            const laneWidth = config.laneWidth;
+            const startX = (width - (laneWidth * raceConfig.lanes)) / 2;
+            
+            for (let i = 0; i < raceConfig.lanes; i++) {
+                const x = startX + (i + 0.5) * laneWidth;
+                const isPlayer = i === raceConfig.playerLane;
+                
+                const swimmer = new Swimmer(
+                    this,
+                    x,
+                    100, // Start at top
+                    i,
+                    isPlayer,
+                    this.strokeType,
+                    true // Portrait mode flag
+                );
+                
+                this.swimmers.push(swimmer);
+            }
+        } else {
+            // Landscape mode: swimmers in horizontal lanes
+            const laneHeight = height / raceConfig.lanes;
+            
+            for (let i = 0; i < raceConfig.lanes; i++) {
+                const y = (i + 0.5) * laneHeight;
+                const isPlayer = i === raceConfig.playerLane;
+                
+                const swimmer = new Swimmer(
+                    this,
+                    80,
+                    y,
+                    i,
+                    isPlayer,
+                    this.strokeType,
+                    false // Landscape mode
+                );
+                
+                this.swimmers.push(swimmer);
+            }
         }
     }
     
@@ -265,22 +405,29 @@ export default class RaceScene extends Phaser.Scene {
             padding: { x: 5, y: 3 }
         });
         
-        // Instructions (adapt for mobile) - better positioned and styled
+        // Instructions (adapt for mobile and orientation)
         const instructionText = this.isMobile ? 
             'TAP DIVE button, then alternate LEFT/RIGHT buttons to swim!' :
             'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim!';
+        
+        const instructionY = this.isPortrait ? height - 200 : 550;
+        const instructionX = width / 2;
+        const fontSize = this.isPortrait ? '14px' : (this.isMobile ? '16px' : '18px');
             
-        this.instructionText = this.add.text(400, 550, instructionText, {
-            font: this.isMobile ? 'bold 16px Arial' : 'bold 18px Arial',
+        this.instructionText = this.add.text(instructionX, instructionY, instructionText, {
+            font: `bold ${fontSize} Arial`,
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 3,
             backgroundColor: '#000000cc',
-            padding: { x: 15, y: 8 }
+            padding: { x: 15, y: 8 },
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
         }).setOrigin(0.5);
 
         // Additional tip - positioned below instructions
-        this.add.text(400, 580, 'Perfect timing = maximum speed!', {
+        const tipY = this.isPortrait ? height - 170 : 580;
+        this.add.text(width / 2, tipY, 'Perfect timing = maximum speed!', {
             font: 'bold 14px Arial',
             fill: '#ffff00',
             stroke: '#000000',
@@ -775,10 +922,16 @@ export default class RaceScene extends Phaser.Scene {
         const height = this.cameras.main.height;
         const controlSize = MobileDetection.getOptimalControlSize();
         
-        // Adjust control size based on screen size
-        const scale = Math.min(width / 1280, height / 720, 1);
-        controlSize.width *= scale;
-        controlSize.height *= scale;
+        // Adjust control size based on screen size and orientation
+        let scale = Math.min(width / 1280, height / 720, 1);
+        if (this.isPortrait) {
+            scale = Math.min(width / 480, height / 854, 1);
+            controlSize.width = Math.max(60, controlSize.width * scale);
+            controlSize.height = Math.max(60, controlSize.height * scale);
+        } else {
+            controlSize.width *= scale;
+            controlSize.height *= scale;
+        }
         
         // Create mobile control container
         this.mobileControls = {
@@ -788,14 +941,24 @@ export default class RaceScene extends Phaser.Scene {
             container: this.add.container(0, 0)
         };
         
-        // Dive button (center bottom)
-        this.createDiveButton(width / 2, height - 100, controlSize);
-        
-        // Left stroke button
-        this.createLeftButton(width / 2 - 120, height - 100, controlSize);
-        
-        // Right stroke button
-        this.createRightButton(width / 2 + 120, height - 100, controlSize);
+        // Position controls based on orientation
+        if (this.isPortrait) {
+            // Portrait mode: stack controls vertically at bottom
+            const buttonY = height - 80;
+            const spacing = Math.min(controlSize.width + 20, width / 4);
+            
+            this.createDiveButton(width / 2, buttonY - 70, controlSize);
+            this.createLeftButton(width / 2 - spacing, buttonY, controlSize);
+            this.createRightButton(width / 2 + spacing, buttonY, controlSize);
+        } else {
+            // Landscape mode: horizontal layout
+            const buttonY = height - 80;
+            const spacing = 120;
+            
+            this.createDiveButton(width / 2, buttonY, controlSize);
+            this.createLeftButton(width / 2 - spacing, buttonY, controlSize);
+            this.createRightButton(width / 2 + spacing, buttonY, controlSize);
+        }
         
         // Mobile-specific UI adjustments
         this.adjustUIForMobile();

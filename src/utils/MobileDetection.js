@@ -74,19 +74,49 @@ export class MobileDetection {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         
-        // For mobile, calculate scale to fit screen
+        // For mobile in portrait mode, use portrait-optimized dimensions
+        if (this.isPortrait()) {
+            const portraitWidth = Math.min(screenWidth * 0.95, 480);
+            const portraitHeight = Math.min(screenHeight * 0.95, 854);
+            
+            return {
+                width: Math.floor(portraitWidth),
+                height: Math.floor(portraitHeight),
+                scale: portraitWidth / baseWidth,
+                isPortrait: true
+            };
+        }
+        
+        // For mobile in landscape, use existing logic
         const scaleX = screenWidth / baseWidth;
         const scaleY = screenHeight / baseHeight;
-        const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+        const scale = Math.min(scaleX, scaleY, 1);
         
         return {
             width: Math.floor(baseWidth * scale),
             height: Math.floor(baseHeight * scale),
-            scale: scale
+            scale: scale,
+            isPortrait: false
         };
     }
     
     static shouldShowLandscapePrompt() {
-        return this.isMobile() && this.isPortrait() && window.innerWidth < 800;
+        // Only show landscape prompt for very small screens or if user prefers landscape
+        return this.isMobile() && this.isPortrait() && window.innerWidth < 600;
+    }
+    
+    static getPortraitLayoutConfig() {
+        if (!this.isPortrait()) return null;
+        
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        return {
+            poolOrientation: 'vertical', // Pool runs top to bottom instead of left to right
+            controlsPosition: 'bottom',
+            uiScale: Math.min(screenWidth / 480, 1),
+            laneWidth: screenWidth * 0.8 / 6, // 6 lanes across 80% of screen width
+            poolLength: screenHeight * 0.7 // Pool takes up 70% of screen height
+        };
     }
 }

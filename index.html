@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Rolling Hills Racers</title>
     <style>
         body {
@@ -15,6 +15,11 @@
             min-height: 100vh;
             font-family: Arial, sans-serif;
             overflow: hidden;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         #game-container {
             border: 3px solid #66ccff;
@@ -30,6 +35,7 @@
         #game-container canvas {
             display: block;
             border-radius: 8px;
+            touch-action: none;
         }
         
         /* Responsive scaling for smaller screens */

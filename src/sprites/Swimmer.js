@@ -1,11 +1,14 @@
 export default class Swimmer {
-    constructor(scene, x, y, lane, isPlayer = false, strokeType = 'freestyle') {
+    constructor(scene, x, y, lane, isPlayer = false, strokeType = 'freestyle', isPortraitMode = false) {
         this.scene = scene;
         this.lane = lane;
         this.isPlayer = isPlayer;
         this.strokeType = strokeType;
+        this.isPortraitMode = isPortraitMode;
         this.x = x;
         this.y = y;
+        this.startX = x;
+        this.startY = y;
         
         // Swimming stats
         this.speed = 0;
@@ -173,19 +176,34 @@ export default class Swimmer {
         // Update position based on speed
         this.position += this.speed * (delta / 1000);
         
-        // Update visual position
-        const newX = 80 + this.position;
-        this.updatePosition(newX, this.y);
+        // Update visual position based on orientation
+        if (this.isPortraitMode) {
+            // Portrait mode: swimmers move vertically (top to bottom)
+            const newY = 100 + this.position;
+            this.updatePosition(this.x, newY);
+            
+            // Check for finish in portrait mode
+            const finishDistance = this.scene.portraitConfig ? this.scene.portraitConfig.poolLength : 500;
+            if (this.position >= finishDistance && !this.finished) {
+                this.finished = true;
+                this.finishTime = time;
+                this.scene.swimmerFinished(this);
+            }
+        } else {
+            // Landscape mode: swimmers move horizontally (left to right)
+            const newX = 80 + this.position;
+            this.updatePosition(newX, this.y);
+            
+            // Check for finish in landscape mode
+            if (this.position >= 1120 && !this.finished) {
+                this.finished = true;
+                this.finishTime = time;
+                this.scene.swimmerFinished(this);
+            }
+        }
         
         // Animate swimming
         this.updateAnimation(time, delta);
-        
-        // Check for finish
-        if (this.position >= 1120 && !this.finished) {
-            this.finished = true;
-            this.finishTime = time;
-            this.scene.swimmerFinished(this);
-        }
         
         // Handle momentum decay for player
         if (this.isPlayer) {
