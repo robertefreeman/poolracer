@@ -91,7 +91,7 @@ export default class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Subtitle - cleaner and more readable
-        this.add.text(width / 2, 180, 'Championship Swimming', {
+        this.add.text(width / 2, 180, 'Week 2: Seahawks VS Ravens', {
             font: `${subtitleSize} Arial`,
             fill: '#66ccff',
             alpha: 0.9

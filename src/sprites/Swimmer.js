@@ -122,7 +122,7 @@ export default class Swimmer {
         this.head.setStrokeStyle(1, 0xd4a574, 1); // Subtle darker outline for better definition
         
         // Create swim cap (front half of head toward finish line)
-        this.cap = this.scene.add.arc(headX + 2, this.y, 5, 0, Math.PI, false, capColor);
+        this.cap = this.scene.add.arc(headX + 2, this.y, 5, Phaser.Math.DegToRad(270), Phaser.Math.DegToRad(90), false, capColor);
         this.cap.setStrokeStyle(0.5, 0x000000, 0.3); // Subtle outline for cap
         
         // Create arms (skin tone)
