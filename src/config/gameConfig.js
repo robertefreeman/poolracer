@@ -5,13 +5,19 @@ const gameSize = MobileDetection.getOptimalGameSize();
 
 export const gameConfig = {
     type: Phaser.AUTO,
-    width: gameSize.width,
-    height: gameSize.height,
+    width: 1280,
+    height: 720,
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: gameSize.width,
-        height: gameSize.height
+        min: {
+            width: 320,
+            height: 180
+        },
+        max: {
+            width: 1920,
+            height: 1080
+        }
     },
     physics: {
         default: 'arcade',

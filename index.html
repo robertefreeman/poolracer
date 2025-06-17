@@ -38,34 +38,20 @@
             touch-action: none;
         }
         
-        /* Responsive scaling for smaller screens */
-        @media (max-width: 1400px) {
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
             #game-container {
-                transform: scale(0.9);
+                border-width: 2px;
+                border-radius: 8px;
+                max-width: 98vw;
+                max-height: 98vh;
             }
         }
         
-        @media (max-width: 1200px) {
-            #game-container {
-                transform: scale(0.8);
-            }
-        }
-        
-        @media (max-width: 1000px) {
-            #game-container {
-                transform: scale(0.7);
-            }
-        }
-        
-        @media (max-width: 800px) {
-            #game-container {
-                transform: scale(0.6);
-            }
-        }
-        
-        @media (max-width: 600px) {
-            #game-container {
-                transform: scale(0.5);
+        @media (orientation: portrait) {
+            body {
+                align-items: flex-start;
+                padding-top: 10px;
             }
         }
     </style>
