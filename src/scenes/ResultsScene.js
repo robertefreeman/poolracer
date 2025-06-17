@@ -197,7 +197,7 @@ export default class ResultsScene extends Phaser.Scene {
         let color = '#ffffff';
 
         if (isDisqualified) {
-            message = '❌ DISQUALIFIED - Too many missed strokes (3+ misses)';
+            message = 'Ref Jim DQ you: Incorrect Stroke!!!';
             color = '#ff0000';
         } else {
             switch (playerResult.place) {
