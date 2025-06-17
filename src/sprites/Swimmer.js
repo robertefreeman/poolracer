@@ -74,6 +74,8 @@ export default class Swimmer {
             this.head.setFillStyle(this.isPlayer ? 0xffcc99 : 0x99ccff); // Lighter color for face up
         }
         
+        // For butterfly, ensure head is at front (no special positioning needed, default is correct)
+        
         // Group all parts
         this.sprite = this.scene.add.group([this.body, this.head, this.leftArm, this.rightArm]);
         
@@ -251,7 +253,7 @@ export default class Swimmer {
                 break;
                 
             case 'butterfly':
-                // Synchronized butterfly strokes - dramatic dolphin motion
+                // Synchronized butterfly strokes - dramatic dolphin motion (head-first)
                 const butterflyPhase = Math.sin(this.animFrame * Math.PI / 2.5) * (1 + intensity * 0.3);
                 const wingSpan = Math.abs(butterflyPhase) * 6;
                 
@@ -259,7 +261,7 @@ export default class Swimmer {
                 this.leftArm.y = this.y - 8 + butterflyPhase * 4;
                 this.rightArm.y = this.y + 8 + butterflyPhase * 4;
                 
-                // Arms sweep forward and back together
+                // Arms sweep forward and back together (corrected direction for head-first)
                 this.leftArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
                 this.rightArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
                 
@@ -275,7 +277,8 @@ export default class Swimmer {
                 this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 2.5) * 0.25;
                 this.body.rotation = Math.sin(this.animFrame * Math.PI / 2.5) * 0.1; // Body waves
                 
-                // Head bobs with dolphin motion
+                // Head bobs with dolphin motion (ensure head stays at front)
+                this.head.x = this.x - 8; // Keep head at front
                 this.head.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
                 break;
         }
