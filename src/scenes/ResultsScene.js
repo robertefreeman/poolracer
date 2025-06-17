@@ -77,35 +77,43 @@ export default class ResultsScene extends Phaser.Scene {
 
     displayResults() {
         const width = this.cameras.main.width;
-        const startY = 160;
+        const startY = 180; // Moved down to accommodate Head Timer text
 
         this.add.text(width / 2, startY - 30, 'Final Times:', {
             font: 'bold 20px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
 
+        // Center the table - calculate positions relative to center
+        const centerX = width / 2;
+        const placeX = centerX - 200;
+        const teamX = centerX - 80;
+        const timeX = centerX + 40;
+        const strokesX = centerX + 140;
+        const statsX = centerX + 240;
+
         // Create table headers
-        this.add.text(80, startY - 5, 'Place', {
+        this.add.text(placeX, startY - 5, 'Place', {
             font: 'bold 14px Arial',
             fill: '#aaaaaa'
         }).setOrigin(0.5);
 
-        this.add.text(200, startY - 5, 'Team', {
+        this.add.text(teamX, startY - 5, 'Team', {
             font: 'bold 14px Arial',
             fill: '#aaaaaa'
         }).setOrigin(0.5);
 
-        this.add.text(350, startY - 5, 'Time', {
+        this.add.text(timeX, startY - 5, 'Time', {
             font: 'bold 14px Arial',
             fill: '#aaaaaa'
         }).setOrigin(0.5);
 
-        this.add.text(450, startY - 5, 'Strokes', {
+        this.add.text(strokesX, startY - 5, 'Strokes', {
             font: 'bold 14px Arial',
             fill: '#aaaaaa'
         }).setOrigin(0.5);
 
-        this.add.text(550, startY - 5, 'Stats', {
+        this.add.text(statsX, startY - 5, 'Stats', {
             font: 'bold 14px Arial',
             fill: '#aaaaaa'
         }).setOrigin(0.5);
@@ -126,33 +134,33 @@ export default class ResultsScene extends Phaser.Scene {
                 placeColor = isPlayer ? '#ffff00' : '#ffffff';
             }
             
-            this.add.text(80, y, placeText, {
+            this.add.text(placeX, y, placeText, {
                 font: 'bold 18px Arial',
                 fill: placeColor
             }).setOrigin(0.5);
 
             // Team (based on lane) - shortened team names
             const teamName = this.getShortTeamName(result.swimmer.lane);
-            this.add.text(200, y, teamName, {
+            this.add.text(teamX, y, teamName, {
                 font: '16px Arial',
                 fill: isPlayer ? '#ffff00' : '#cccccc'
             }).setOrigin(0.5);
 
             // Time - show with strikethrough if DQ
             const timeText = `${result.time.toFixed(2)}s`;
-            const timeElement = this.add.text(350, y, timeText, {
+            const timeElement = this.add.text(timeX, y, timeText, {
                 font: '18px Arial',
                 fill: isDisqualified ? '#ff6666' : (isPlayer ? '#ffff00' : '#ffffff')
             }).setOrigin(0.5);
             
             // Add strikethrough for DQ times
             if (isDisqualified) {
-                this.add.line(350, y, -timeText.length * 5, 0, timeText.length * 5, 0, 0xff0000)
+                this.add.line(timeX, y, -timeText.length * 5, 0, timeText.length * 5, 0, 0xff0000)
                     .setLineWidth(2);
             }
 
             // Stroke count
-            this.add.text(450, y, `${result.swimmer.strokeCount}`, {
+            this.add.text(strokesX, y, `${result.swimmer.strokeCount}`, {
                 font: '16px Arial',
                 fill: '#aaaaaa'
             }).setOrigin(0.5);
@@ -160,17 +168,17 @@ export default class ResultsScene extends Phaser.Scene {
             // Player indicator and stats
             if (isPlayer) {
                 if (isDisqualified) {
-                    this.add.text(550, y - 10, '(YOU)', {
+                    this.add.text(statsX, y - 10, '(YOU)', {
                         font: 'bold 14px Arial',
                         fill: '#ff0000'
                     }).setOrigin(0.5);
                     
-                    this.add.text(550, y + 8, `${result.swimmer.missTapCount} misses`, {
+                    this.add.text(statsX, y + 8, `${result.swimmer.missTapCount} misses`, {
                         font: '12px Arial',
                         fill: '#ff0000'
                     }).setOrigin(0.5);
                 } else {
-                    this.add.text(550, y - 10, '(YOU)', {
+                    this.add.text(statsX, y - 10, '(YOU)', {
                         font: 'bold 14px Arial',
                         fill: '#ff6b35'
                     }).setOrigin(0.5);
@@ -178,7 +186,7 @@ export default class ResultsScene extends Phaser.Scene {
                     const accuracy = result.swimmer.totalTapCount > 0 ? 
                         ((result.swimmer.totalTapCount - result.swimmer.missTapCount) / result.swimmer.totalTapCount * 100) : 100;
                     
-                    this.add.text(550, y + 8, `${accuracy.toFixed(0)}% acc`, {
+                    this.add.text(statsX, y + 8, `${accuracy.toFixed(0)}% acc`, {
                         font: '12px Arial',
                         fill: accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000'
                     }).setOrigin(0.5);
@@ -421,6 +429,12 @@ export default class ResultsScene extends Phaser.Scene {
         this.add.text(width / 2, 85, `${this.strokeType.toUpperCase()} - 25m`, {
             font: '18px Arial',
             fill: '#cccccc'
+        }).setOrigin(0.5);
+
+        // Head Timer credit
+        this.add.text(width / 2, 110, 'Head Timer: Ms. Kristin', {
+            font: '16px Arial',
+            fill: '#aaaaaa'
         }).setOrigin(0.5);
 
         // Display results
