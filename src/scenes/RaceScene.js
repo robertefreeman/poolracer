@@ -9,6 +9,7 @@ export default class RaceScene extends Phaser.Scene {
 
     init(data) {
         this.strokeType = data.strokeType || 'freestyle';
+        this.playerName = data.playerName || 'Anonymous';
     }
 
     create() {
@@ -1101,7 +1102,8 @@ export default class RaceScene extends Phaser.Scene {
             
             this.scene.start('ResultsScene', {
                 results: this.finishedSwimmers,
-                strokeType: this.strokeType
+                strokeType: this.strokeType,
+                playerName: this.playerName
             });
         } catch (error) {
             console.error('Error in goToResults:', error);

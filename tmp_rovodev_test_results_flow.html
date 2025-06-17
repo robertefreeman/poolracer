@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Results Flow</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            border: 3px solid #66ccff;
+            border-radius: 12px;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <script type="module">
+        // Test the results and high score flow
+        import { highScoreManager } from './src/utils/HighScoreManager.js';
+        import ResultsScene from './src/scenes/ResultsScene.js';
+        import HighScoreScene from './src/scenes/HighScoreScene.js';
+
+        const config = {
+            type: Phaser.AUTO,
+            width: 1280,
+            height: 720,
+            parent: 'game-container',
+            backgroundColor: '#001133',
+            scene: [ResultsScene, HighScoreScene]
+        };
+
+        const game = new Phaser.Game(config);
+
+        // Test data - simulate a race result that should be a high score
+        const testResults = [
+            {
+                swimmer: { 
+                    isPlayer: true, 
+                    lane: 2, 
+                    strokeCount: 15, 
+                    missTapCount: 2, 
+                    totalTapCount: 20,
+                    finished: true 
+                },
+                time: 18.45, // Should be a good time for high score
+                place: 1
+            },
+            {
+                swimmer: { 
+                    isPlayer: false, 
+                    lane: 0, 
+                    strokeCount: 18, 
+                    missTapCount: 0, 
+                    totalTapCount: 18,
+                    finished: true 
+                },
+                time: 19.23,
+                place: 2
+            }
+        ];
+
+        // Start with results scene
+        game.scene.start('ResultsScene', {
+            results: testResults,
+            strokeType: 'freestyle'
+        });
+
+        console.log('🏊 Testing Results and High Score Flow');
+        console.log('📊 Test data:', testResults);
+        console.log('🏆 Current high scores:', highScoreManager.getAllHighScores());
+    </script>
+</body>
+</html>

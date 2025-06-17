@@ -12,11 +12,17 @@ export default class MenuScene extends Phaser.Scene {
         // Mobile detection
         this.isMobile = MobileDetection.isMobile();
 
+        // Initialize player name
+        this.playerName = localStorage.getItem('poolracer_playername') || '';
+
         // Create clean background
         this.createCleanBackground();
 
         // Main title - larger and more prominent
         this.createMainTitle();
+
+        // Create player name input section
+        this.createPlayerNameSection();
 
         // Create stroke selection cards - bigger and cleaner
         this.createStrokeCards();
@@ -113,7 +119,7 @@ export default class MenuScene extends Phaser.Scene {
         ];
 
         // Section title - larger and more prominent
-        this.add.text(width / 2, 260, 'Choose Your Style', {
+        this.add.text(width / 2, 300, 'Choose Your Style', {
             font: this.isMobile ? 'bold 28px Arial' : 'bold 36px Arial',
             fill: '#ffffff',
             stroke: '#0066cc',
@@ -131,7 +137,7 @@ export default class MenuScene extends Phaser.Scene {
             const row = Math.floor(index / 2);
             const col = index % 2;
             const x = startX + (col * (cardWidth + spacing)) + (cardWidth / 2);
-            const y = 340 + (row * (cardHeight + spacing));
+            const y = 380 + (row * (cardHeight + spacing));
 
             // Card background with cleaner design
             const card = this.add.graphics();
@@ -197,7 +203,10 @@ export default class MenuScene extends Phaser.Scene {
             button.on('pointerdown', () => {
                 this.cameras.main.flash(300, 255, 255, 255, 0.3);
                 this.time.delayedCall(200, () => {
-                    this.scene.start('RaceScene', { strokeType: stroke.key });
+                    this.scene.start('RaceScene', { 
+                        strokeType: stroke.key,
+                        playerName: this.playerName.trim() || 'Anonymous'
+                    });
                 });
             });
         });
@@ -266,6 +275,83 @@ export default class MenuScene extends Phaser.Scene {
             fill: '#66aadd',
             alpha: 0.7
         }).setOrigin(0.5);
+    }
+
+    createPlayerNameSection() {
+        const width = this.cameras.main.width;
+        
+        // Player name label
+        this.add.text(width / 2, 220, 'Your Name (for high scores):', {
+            font: this.isMobile ? '16px Arial' : '18px Arial',
+            fill: '#ccddff'
+        }).setOrigin(0.5);
+
+        // Name input field background
+        this.nameInputBg = this.add.rectangle(width / 2, 250, 300, 40, 0x003366);
+        this.nameInputBg.setStrokeStyle(2, 0x66ccff);
+
+        // Name text display
+        this.nameText = this.add.text(width / 2, 250, this.playerName || 'Enter your name...', {
+            font: '18px Arial',
+            fill: this.playerName ? '#ffffff' : '#888888'
+        }).setOrigin(0.5);
+
+        // Make input interactive
+        this.nameInputBg.setInteractive();
+        this.nameInputBg.on('pointerdown', () => {
+            this.promptForName();
+        });
+
+        // Setup keyboard input
+        this.input.keyboard.on('keydown', (event) => {
+            if (event.key === 'Enter' && this.nameInputActive) {
+                this.finishNameEntry();
+            } else if (event.key === 'Escape' && this.nameInputActive) {
+                this.cancelNameEntry();
+            } else if (event.key === 'Backspace' && this.nameInputActive) {
+                if (this.playerName.length > 0) {
+                    this.playerName = this.playerName.slice(0, -1);
+                    this.updateNameDisplay();
+                }
+            } else if (event.key.length === 1 && this.nameInputActive && this.playerName.length < 12) {
+                if (/[a-zA-Z0-9 ]/.test(event.key)) {
+                    this.playerName += event.key;
+                    this.updateNameDisplay();
+                }
+            }
+        });
+    }
+
+    promptForName() {
+        this.nameInputActive = true;
+        this.nameInputBg.setStrokeStyle(3, 0x88ddff);
+        if (!this.playerName) {
+            this.playerName = '';
+            this.updateNameDisplay();
+        }
+    }
+
+    finishNameEntry() {
+        this.nameInputActive = false;
+        this.nameInputBg.setStrokeStyle(2, 0x66ccff);
+        localStorage.setItem('poolracer_playername', this.playerName);
+    }
+
+    cancelNameEntry() {
+        this.nameInputActive = false;
+        this.nameInputBg.setStrokeStyle(2, 0x66ccff);
+        this.playerName = localStorage.getItem('poolracer_playername') || '';
+        this.updateNameDisplay();
+    }
+
+    updateNameDisplay() {
+        if (this.playerName.length > 0) {
+            this.nameText.setText(this.playerName);
+            this.nameText.setFill('#ffffff');
+        } else {
+            this.nameText.setText('Enter your name...');
+            this.nameText.setFill('#888888');
+        }
     }
 
     createSubtleAnimations() {
