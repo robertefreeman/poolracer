@@ -48,7 +48,7 @@ export default class Swimmer {
         this.totalTapCount = 0; // Track total taps for accuracy calculation
         
         // AI properties
-        this.aiSkill = isPlayer ? 1.0 : Phaser.Math.FloatBetween(0.9, 1.3); // AI skill range 90-130% for competitive racing
+        this.aiSkill = isPlayer ? 1.0 : Phaser.Math.FloatBetween(1.2, 1.7); // AI skill range 120-170% for very competitive racing
         this.aiRhythmTimer = 0;
         this.aiStrokeInterval = Phaser.Math.FloatBetween(0.8, 1.2);
         
