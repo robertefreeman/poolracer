@@ -59,12 +59,20 @@ export default class Swimmer {
         // Create swimmer body (rectangle)
         this.body = this.scene.add.rectangle(this.x, this.y, 24, 12, this.isPlayer ? 0xff6b35 : 0x4a90e2);
         
-        // Create swimmer head (circle)
-        this.head = this.scene.add.circle(this.x - 8, this.y, 6, this.isPlayer ? 0xffb366 : 0x7bb3f0);
+        // Create swimmer head (circle) - position based on stroke type
+        const headX = this.strokeType === 'backstroke' ? this.x + 8 : this.x - 8; // Head at back for backstroke
+        this.head = this.scene.add.circle(headX, this.y, 6, this.isPlayer ? 0xffb366 : 0x7bb3f0);
         
-        // Create arms (small rectangles)
-        this.leftArm = this.scene.add.rectangle(this.x - 4, this.y - 8, 8, 4, this.isPlayer ? 0xffb366 : 0x7bb3f0);
-        this.rightArm = this.scene.add.rectangle(this.x - 4, this.y + 8, 8, 4, this.isPlayer ? 0xffb366 : 0x7bb3f0);
+        // Create arms (small rectangles) - position based on stroke type
+        const armX = this.strokeType === 'backstroke' ? this.x + 4 : this.x - 4; // Arms at back for backstroke
+        this.leftArm = this.scene.add.rectangle(armX, this.y - 8, 8, 4, this.isPlayer ? 0xffb366 : 0x7bb3f0);
+        this.rightArm = this.scene.add.rectangle(armX, this.y + 8, 8, 4, this.isPlayer ? 0xffb366 : 0x7bb3f0);
+        
+        // For backstroke, flip the body orientation and change head color to show face up
+        if (this.strokeType === 'backstroke') {
+            this.body.setRotation(Math.PI); // Flip body 180 degrees
+            this.head.setFillStyle(this.isPlayer ? 0xffcc99 : 0x99ccff); // Lighter color for face up
+        }
         
         // Group all parts
         this.sprite = this.scene.add.group([this.body, this.head, this.leftArm, this.rightArm]);
@@ -191,13 +199,17 @@ export default class Swimmer {
                 break;
                 
             case 'backstroke':
-                // Backward alternating strokes
-                const backstrokeOffset = Math.cos(this.animFrame * Math.PI / 4) * (4 + intensity);
+                // Backward alternating strokes - arms reach back over head
+                const backstrokeOffset = Math.cos(this.animFrame * Math.PI / 4) * (6 + intensity);
                 this.leftArm.y = this.y - 8 + backstrokeOffset;
                 this.rightArm.y = this.y + 8 - backstrokeOffset;
-                this.leftArm.rotation = Math.cos(this.animFrame * Math.PI / 4) * 0.4;
-                this.rightArm.rotation = -Math.cos(this.animFrame * Math.PI / 4) * 0.4;
-                // Swimmer faces up
+                // Arms rotate more dramatically for backstroke windmill motion
+                this.leftArm.rotation = Math.cos(this.animFrame * Math.PI / 4) * 0.6;
+                this.rightArm.rotation = -Math.cos(this.animFrame * Math.PI / 4) * 0.6;
+                // Arms extend further back for backstroke
+                this.leftArm.x = this.x + 4 + Math.sin(this.animFrame * Math.PI / 4) * 3;
+                this.rightArm.x = this.x + 4 + Math.sin(this.animFrame * Math.PI / 4) * 3;
+                // Keep swimmer face up color
                 this.head.setFillStyle(this.isPlayer ? 0xffcc99 : 0x99ccff);
                 break;
                 
