@@ -998,6 +998,7 @@ export default class RaceScene extends Phaser.Scene {
 
     endRace() {
         console.log('Race ending, finished swimmers:', this.finishedSwimmers.length);
+        console.log('Finished swimmers data:', this.finishedSwimmers);
         this.raceFinished = true;
         
         // Add visual feedback that race is ending
@@ -1008,23 +1009,48 @@ export default class RaceScene extends Phaser.Scene {
             strokeThickness: 3
         }).setOrigin(0.5);
         
-        // Immediate transition to prevent lockup
-        console.log('Transitioning to ResultsScene...');
+        // Add click-to-continue fallback
+        const continueText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 + 50, 'Click anywhere to continue', {
+            font: '16px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+        
+        // Make screen clickable as fallback
+        this.input.once('pointerdown', () => {
+            console.log('Manual continue clicked');
+            this.goToResults();
+        });
+        
+        // Try automatic transition
+        console.log('Attempting automatic transition...');
+        this.time.delayedCall(100, () => {
+            this.goToResults();
+        });
+    }
+    
+    goToResults() {
+        console.log('goToResults called');
         try {
+            // Validate data before transition
+            if (!this.finishedSwimmers || this.finishedSwimmers.length === 0) {
+                console.error('No finished swimmers data!');
+                return;
+            }
+            
+            console.log('Starting ResultsScene with data:', {
+                results: this.finishedSwimmers,
+                strokeType: this.strokeType
+            });
+            
             this.scene.start('ResultsScene', {
                 results: this.finishedSwimmers,
                 strokeType: this.strokeType
             });
         } catch (error) {
-            console.error('Error transitioning to ResultsScene:', error);
-            // Fallback: try again after a short delay
-            this.time.delayedCall(1000, () => {
-                console.log('Retry transition to ResultsScene...');
-                this.scene.start('ResultsScene', {
-                    results: this.finishedSwimmers,
-                    strokeType: this.strokeType
-                });
-            });
+            console.error('Error in goToResults:', error);
+            // Ultimate fallback - go to menu
+            console.log('Fallback to MenuScene');
+            this.scene.start('MenuScene');
         }
     }
 }
