@@ -997,13 +997,34 @@ export default class RaceScene extends Phaser.Scene {
     }
 
     endRace() {
+        console.log('Race ending, finished swimmers:', this.finishedSwimmers.length);
         this.raceFinished = true;
         
-        this.time.delayedCall(2000, () => {
+        // Add visual feedback that race is ending
+        const endText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 'RACE FINISHED!', {
+            font: 'bold 36px Arial',
+            fill: '#ffff00',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        // Immediate transition to prevent lockup
+        console.log('Transitioning to ResultsScene...');
+        try {
             this.scene.start('ResultsScene', {
                 results: this.finishedSwimmers,
                 strokeType: this.strokeType
             });
-        });
+        } catch (error) {
+            console.error('Error transitioning to ResultsScene:', error);
+            // Fallback: try again after a short delay
+            this.time.delayedCall(1000, () => {
+                console.log('Retry transition to ResultsScene...');
+                this.scene.start('ResultsScene', {
+                    results: this.finishedSwimmers,
+                    strokeType: this.strokeType
+                });
+            });
+        }
     }
 }
