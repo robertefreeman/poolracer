@@ -1,3 +1,5 @@
+import { highScoreManager } from '../utils/HighScoreManager.js';
+
 export default class ResultsScene extends Phaser.Scene {
     constructor() {
         super({ key: 'ResultsScene' });
@@ -6,6 +8,7 @@ export default class ResultsScene extends Phaser.Scene {
     init(data) {
         this.results = data.results || [];
         this.strokeType = data.strokeType || 'freestyle';
+        this.showHighScores = data.showHighScores || false;
     }
 
     create() {
@@ -28,6 +31,9 @@ export default class ResultsScene extends Phaser.Scene {
 
         // Sort results by place
         this.results.sort((a, b) => a.place - b.place);
+
+        // Check for high scores first
+        this.checkForHighScores();
 
         // Display results
         this.displayResults();
@@ -231,5 +237,47 @@ export default class ResultsScene extends Phaser.Scene {
             font: '12px Arial',
             fill: '#aaaaaa'
         }).setOrigin(0.5);
+
+        // High Scores button
+        const highScoresBtn = this.add.rectangle(width / 2, 580, 150, 30, 0x4a90e2)
+            .setInteractive();
+        
+        this.add.text(width / 2, 580, '🏆 High Scores', {
+            font: '14px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        highScoresBtn.on('pointerover', () => {
+            highScoresBtn.setFillStyle(0x5aa0f2);
+        });
+
+        highScoresBtn.on('pointerout', () => {
+            highScoresBtn.setFillStyle(0x4a90e2);
+        });
+
+        highScoresBtn.on('pointerdown', () => {
+            this.scene.start('HighScoreScene', { selectedStroke: this.strokeType });
+        });
+    }
+
+    checkForHighScores() {
+        // Only check if we haven't already shown high scores
+        if (this.showHighScores) return;
+
+        const playerResult = this.results.find(r => r.swimmer.isPlayer);
+        if (!playerResult) return;
+
+        // Check if player's time qualifies for high score
+        if (highScoreManager.isHighScore(this.strokeType, playerResult.time)) {
+            // Delay to let player see results first
+            this.time.delayedCall(2000, () => {
+                this.scene.start('NameEntryScene', {
+                    raceTime: playerResult.time,
+                    strokeType: this.strokeType,
+                    place: playerResult.place,
+                    results: this.results
+                });
+            });
+        }
     }
 }

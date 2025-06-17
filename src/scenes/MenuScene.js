@@ -39,6 +39,9 @@ export default class MenuScene extends Phaser.Scene {
 
         // Create stroke selection cards
         this.createStrokeCards();
+        
+        // Create high scores button
+        this.createHighScoresButton();
 
         // Game features highlight
         this.createFeatureHighlights();
@@ -281,6 +284,51 @@ export default class MenuScene extends Phaser.Scene {
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
+        });
+    }
+
+    createHighScoresButton() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        // High scores button
+        const buttonWidth = this.isMobile ? 200 : 250;
+        const buttonHeight = this.isMobile ? 50 : 60;
+        const buttonY = height - 150;
+
+        const highScoresBg = this.add.rectangle(width / 2, buttonY, buttonWidth, buttonHeight, 0x4a90e2);
+        highScoresBg.setStrokeStyle(3, 0x66ccff);
+
+        const highScoresText = this.add.text(width / 2, buttonY, '🏆 HIGH SCORES', {
+            font: this.isMobile ? 'bold 16px Arial' : 'bold 20px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        const highScoresButton = this.add.rectangle(width / 2, buttonY, buttonWidth, buttonHeight, 0x000000, 0)
+            .setInteractive();
+
+        highScoresButton.on('pointerdown', () => {
+            this.scene.start('HighScoreScene');
+        });
+
+        highScoresButton.on('pointerover', () => {
+            highScoresBg.setFillStyle(0x5aa0f2);
+            this.tweens.add({
+                targets: [highScoresBg, highScoresText],
+                scaleX: 1.05,
+                scaleY: 1.05,
+                duration: 100
+            });
+        });
+
+        highScoresButton.on('pointerout', () => {
+            highScoresBg.setFillStyle(0x4a90e2);
+            this.tweens.add({
+                targets: [highScoresBg, highScoresText],
+                scaleX: 1.0,
+                scaleY: 1.0,
+                duration: 100
+            });
         });
     }
 }
