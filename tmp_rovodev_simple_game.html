@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Game Test</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; }
+        #game-container { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <script>
+        console.log('Creating simple game...');
+        
+        const config = {
+            type: Phaser.AUTO,
+            width: 1280,
+            height: 720,
+            parent: 'game-container',
+            backgroundColor: '#0066cc',
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            scene: {
+                create: function() {
+                    console.log('Scene created!');
+                    
+                    // Blue background (pool)
+                    this.add.rectangle(640, 360, 1280, 720, 0x0066cc);
+                    
+                    // White text
+                    this.add.text(640, 360, 'GAME WORKING!', {
+                        fontSize: '64px',
+                        fill: '#ffffff',
+                        stroke: '#000000',
+                        strokeThickness: 4
+                    }).setOrigin(0.5);
+                    
+                    // Green rectangle
+                    this.add.rectangle(640, 200, 400, 100, 0x00ff00);
+                    
+                    console.log('Scene setup complete!');
+                }
+            }
+        };
+        
+        console.log('Starting game with config:', config);
+        const game = new Phaser.Game(config);
+        console.log('Game created:', game);
+    </script>
+</body>
+</html>

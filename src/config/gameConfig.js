@@ -1,7 +1,7 @@
 import { MobileDetection } from '../utils/MobileDetection.js';
 
-// Get optimal game size based on device
-const gameSize = MobileDetection.getOptimalGameSize();
+// Use fixed game size for stability
+// const gameSize = MobileDetection.getOptimalGameSize();
 
 export const gameConfig = {
     type: Phaser.AUTO,
