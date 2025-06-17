@@ -270,7 +270,7 @@ export default class RaceScene extends Phaser.Scene {
             'TAP DIVE button, then alternate LEFT/RIGHT buttons to swim!' :
             'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim!';
             
-        this.instructionText = this.add.text(width / 2, height - 100, instructionText, {
+        this.instructionText = this.add.text(400, 550, instructionText, {
             font: this.isMobile ? 'bold 16px Arial' : 'bold 18px Arial',
             fill: '#ffffff',
             stroke: '#000000',
@@ -280,7 +280,7 @@ export default class RaceScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Additional tip - positioned below instructions
-        this.add.text(width / 2, height - 70, 'Perfect timing = maximum speed!', {
+        this.add.text(400, 580, 'Perfect timing = maximum speed!', {
             font: 'bold 14px Arial',
             fill: '#ffff00',
             stroke: '#000000',
