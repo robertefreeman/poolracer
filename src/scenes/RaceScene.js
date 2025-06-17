@@ -133,12 +133,13 @@ export default class RaceScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
         
-        // Distance markers with enhanced styling
+        // Distance markers with enhanced styling (25m pool)
+        const distances = ['8m', '17m', '25m'];
         for (let i = 1; i < 4; i++) {
             const x = 80 + (i * 280);
             const marker = this.add.rectangle(x, height / 2, 2, height, 0xcccccc);
             
-            this.add.text(x - 10, 10, `${i * 25}m`, {
+            this.add.text(x - 10, 10, distances[i-1], {
                 font: '12px Arial',
                 fill: '#ffffff',
                 stroke: '#000000',
@@ -333,6 +334,12 @@ export default class RaceScene extends Phaser.Scene {
         this.canDive = true;
         this.time.delayedCall(1000, () => {
             this.canDive = false;
+            // If player hasn't dived by now, force them to dive to prevent infinite race
+            const player = this.swimmers[raceConfig.playerLane];
+            if (player && !player.hasDived) {
+                player.dive(this.time.now, { multiplier: 0.8, type: 'late' });
+                this.showDiveTimingFeedback({ multiplier: 0.8, type: 'late' });
+            }
         });
     }
     
