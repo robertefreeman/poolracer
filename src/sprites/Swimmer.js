@@ -9,9 +9,9 @@ export default class Swimmer {
         
         // Swimming stats
         this.speed = 0;
-        this.baseSpeed = 80; // Reduced from 100 to slow down overall speed
+        this.baseSpeed = 70; // Further reduced from 80 to slow down player
         this.momentum = 0; // Current forward momentum
-        this.maxMomentum = 150; // Reduced from 200 to cap maximum speed
+        this.maxMomentum = 130; // Further reduced from 150 to cap maximum speed
         this.momentumDecay = 40; // Increased from 30 for faster momentum loss
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
@@ -48,7 +48,7 @@ export default class Swimmer {
         this.totalTapCount = 0; // Track total taps for accuracy calculation
         
         // AI properties
-        this.aiSkill = isPlayer ? 1.0 : Phaser.Math.FloatBetween(0.7, 0.9);
+        this.aiSkill = isPlayer ? 1.0 : Phaser.Math.FloatBetween(0.8, 1.2); // Increased from 0.8-1.0 to 0.8-1.2 to make AI even faster
         this.aiRhythmTimer = 0;
         this.aiStrokeInterval = Phaser.Math.FloatBetween(0.8, 1.2);
         
@@ -299,7 +299,7 @@ export default class Swimmer {
         const frequencyRatio = Math.min(clicksPerSecond / this.maxClickFrequency, 1.0);
         // Use square root for diminishing returns on frequency bonus
         const diminishedRatio = Math.sqrt(frequencyRatio);
-        this.frequencySpeedMultiplier = 1.0 + (diminishedRatio * 0.3); // Reduced from 40% to 30% max bonus
+        this.frequencySpeedMultiplier = 1.0 + (diminishedRatio * 0.2); // Further reduced from 30% to 20% max bonus
     }
     
     // Option C: Calculate click rate multiplier based on recent clicks
@@ -326,7 +326,7 @@ export default class Swimmer {
             // Faster clicking gets bonus but with diminishing returns
             // Use logarithmic scaling to reduce effectiveness of very fast clicking
             const bonusRatio = Math.log(rateRatio) / Math.log(3); // Diminishing returns curve
-            this.clickRateMultiplier = Math.min(1.0 + (bonusRatio * 0.4), 1.6); // Reduced max from 1.8x to 1.6x
+            this.clickRateMultiplier = Math.min(1.0 + (bonusRatio * 0.3), 1.4); // Further reduced max from 1.6x to 1.4x
         } else {
             // Slower clicking gets penalty (down to 0.5x speed for very slow clicking)
             this.clickRateMultiplier = Math.max(0.5 + (rateRatio * 0.5), 0.5);
@@ -375,9 +375,9 @@ export default class Swimmer {
             // Timing bonus for good rhythm (250-700ms for tighter timing window)
             if (this.strokeCount > 1) {
                 if (timeSinceLastStroke >= 250 && timeSinceLastStroke <= 700) {
-                    momentumGain += 15; // Reduced bonus from 20 to 15
+                    momentumGain += 10; // Further reduced bonus from 15 to 10
                 } else if (timeSinceLastStroke < 250) {
-                    momentumGain += 5; // Reduced bonus from 10 to 5
+                    momentumGain += 3; // Further reduced bonus from 5 to 3
                 } else if (timeSinceLastStroke > 1000) {
                     momentumGain -= 20; // Increased penalty from 15 to 20
                 }
@@ -538,7 +538,7 @@ export default class Swimmer {
             this.hasDived = true;
             
             // Calculate initial momentum with timing bonus (reduced base)
-            let baseMomentum = 60; // Reduced from 80 to slow initial start
+            let baseMomentum = 50; // Further reduced from 60 to slow initial start
             if (diveTimingBonus) {
                 baseMomentum = baseMomentum * diveTimingBonus.multiplier;
                 // Store the dive bonus for continued momentum advantage
