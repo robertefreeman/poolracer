@@ -209,7 +209,10 @@ export default class ResultsScene extends Phaser.Scene {
 
         raceAgainBtn.on('pointerdown', () => {
             // Prevent clicking if handling high score
-            if (this.handlingHighScore) return;
+            if (this.handlingHighScore) {
+                console.log('Button click blocked - handling high score');
+                return;
+            }
             this.scene.start('RaceScene', { strokeType: this.strokeType });
         });
 
@@ -270,32 +273,72 @@ export default class ResultsScene extends Phaser.Scene {
         // Only check if we haven't already shown high scores
         if (this.showHighScores) return;
 
-        const playerResult = this.results.find(r => r.swimmer.isPlayer);
-        if (!playerResult) {
-            console.log('No player result found');
-            return;
-        }
+        try {
+            const playerResult = this.results.find(r => r.swimmer.isPlayer);
+            if (!playerResult) {
+                console.log('No player result found');
+                return;
+            }
 
-        console.log('Checking high score for:', this.strokeType, playerResult.time);
-        
-        // Check if player's time qualifies for high score
-        if (highScoreManager.isHighScore(this.strokeType, playerResult.time)) {
-            console.log('High score detected! Transitioning to name entry...');
+            console.log('Checking high score for:', this.strokeType, playerResult.time);
             
-            // Mark that we're handling high scores to prevent button clicks
-            this.handlingHighScore = true;
+            // Check if player's time qualifies for high score
+            const isHighScore = highScoreManager.isHighScore(this.strokeType, playerResult.time);
+            console.log('High score check result:', isHighScore);
             
-            // Delay to let player see results first
-            this.time.delayedCall(2000, () => {
-                this.scene.start('NameEntryScene', {
-                    raceTime: playerResult.time,
-                    strokeType: this.strokeType,
-                    place: playerResult.place,
-                    results: this.results
+            if (isHighScore) {
+                console.log('High score detected! Transitioning to name entry...');
+                
+                // Mark that we're handling high scores to prevent button clicks
+                this.handlingHighScore = true;
+                
+                // Show visual feedback
+                const highScoreText = this.add.text(this.cameras.main.width / 2, 100, 'NEW HIGH SCORE!', {
+                    font: 'bold 24px Arial',
+                    fill: '#ffd700',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                }).setOrigin(0.5);
+                
+                // Delay to let player see results first, with fallback
+                const transition = this.time.delayedCall(2000, () => {
+                    console.log('Attempting scene transition...');
+                    this.scene.start('NameEntryScene', {
+                        raceTime: playerResult.time,
+                        strokeType: this.strokeType,
+                        place: playerResult.place,
+                        results: this.results
+                    });
                 });
-            });
-        } else {
-            console.log('Time does not qualify for high score');
+                
+                // Fallback: Allow manual skip after 5 seconds
+                this.time.delayedCall(5000, () => {
+                    if (this.handlingHighScore) {
+                        console.log('Adding manual skip option...');
+                        const skipText = this.add.text(this.cameras.main.width / 2, 150, 'Click anywhere to continue', {
+                            font: '16px Arial',
+                            fill: '#ffffff'
+                        }).setOrigin(0.5);
+                        
+                        this.input.once('pointerdown', () => {
+                            this.handlingHighScore = false;
+                            this.scene.start('NameEntryScene', {
+                                raceTime: playerResult.time,
+                                strokeType: this.strokeType,
+                                place: playerResult.place,
+                                results: this.results
+                            });
+                        });
+                    }
+                });
+                
+            } else {
+                console.log('Time does not qualify for high score');
+                this.handlingHighScore = false; // Ensure buttons work
+            }
+        } catch (error) {
+            console.error('Error in checkForHighScores:', error);
+            this.handlingHighScore = false; // Ensure buttons work if error occurs
         }
     }
 }
