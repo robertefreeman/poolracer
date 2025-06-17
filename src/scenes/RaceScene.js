@@ -998,53 +998,12 @@ export default class RaceScene extends Phaser.Scene {
 
     endRace() {
         console.log('Race ending, finished swimmers:', this.finishedSwimmers.length);
-        console.log('Finished swimmers data:', this.finishedSwimmers);
         this.raceFinished = true;
         
-        // Add visual feedback that race is ending
-        const endText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 'RACE FINISHED!', {
-            font: 'bold 36px Arial',
-            fill: '#ffff00',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
-        
-        // Add click-to-continue fallback
-        const continueText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2 + 50, 'Click anywhere to continue', {
-            font: '16px Arial',
-            fill: '#ffffff'
-        }).setOrigin(0.5);
-        
-        // Make screen clickable as fallback with multiple methods
-        this.input.removeAllListeners(); // Clear any existing listeners
-        
-        // Add multiple input methods
-        this.input.on('pointerdown', () => {
-            console.log('Manual continue clicked');
+        // Simple automatic transition with short delay
+        this.time.delayedCall(1000, () => {
             this.goToResults();
         });
-        
-        // Add keyboard fallback
-        this.input.keyboard.on('keydown', () => {
-            console.log('Key pressed - continuing');
-            this.goToResults();
-        });
-        
-        // Add a large invisible clickable area
-        const clickArea = this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, 
-            this.cameras.main.width, this.cameras.main.height, 0x000000, 0)
-            .setInteractive();
-        
-        clickArea.on('pointerdown', () => {
-            console.log('Click area activated');
-            this.goToResults();
-        });
-        
-        // Try automatic transition (disabled for now to test manual)
-        console.log('Manual transition only - click or press any key');
-        // this.time.delayedCall(100, () => {
-        //     this.goToResults();
-        // });
     }
     
     goToResults() {

@@ -18,31 +18,26 @@ export default class ResultsScene extends Phaser.Scene {
         // Background
         this.add.rectangle(width / 2, height / 2, width, height, 0x001133);
 
-        // Title
-        this.add.text(width / 2, 50, 'Race Results', {
-            font: 'bold 32px Arial',
-            fill: '#ffffff'
-        }).setOrigin(0.5);
-
-        this.add.text(width / 2, 85, `${this.strokeType.toUpperCase()} - 25m`, {
-            font: '18px Arial',
-            fill: '#cccccc'
-        }).setOrigin(0.5);
-
         // Sort results by place
         this.results.sort((a, b) => a.place - b.place);
 
-        // Check for high scores first
+        // Initialize state
+        this.isHighScore = false;
+        this.nameEntryMode = false;
+        this.playerName = '';
+        this.maxNameLength = 12;
+
+        // Check for high scores and set mode
         this.checkForHighScores();
 
-        // Display results
-        this.displayResults();
-
-        // Player's result highlight
-        this.highlightPlayerResult();
-
-        // Buttons
-        this.createButtons();
+        // Create UI based on mode
+        if (this.isHighScore && !this.nameEntryMode) {
+            this.createHighScoreUI();
+        } else if (this.nameEntryMode) {
+            this.createNameEntryUI();
+        } else {
+            this.createNormalResultsUI();
+        }
     }
 
     displayResults() {
@@ -208,11 +203,6 @@ export default class ResultsScene extends Phaser.Scene {
         });
 
         raceAgainBtn.on('pointerdown', () => {
-            // Prevent clicking if handling high score
-            if (this.handlingHighScore) {
-                console.log('Button click blocked - handling high score');
-                return;
-            }
             this.scene.start('RaceScene', { strokeType: this.strokeType });
         });
 
@@ -234,8 +224,6 @@ export default class ResultsScene extends Phaser.Scene {
         });
 
         menuBtn.on('pointerdown', () => {
-            // Prevent clicking if handling high score
-            if (this.handlingHighScore) return;
             this.scene.start('MenuScene');
         });
 
@@ -263,8 +251,6 @@ export default class ResultsScene extends Phaser.Scene {
         });
 
         highScoresBtn.on('pointerdown', () => {
-            // Prevent clicking if handling high score
-            if (this.handlingHighScore) return;
             this.scene.start('HighScoreScene', { selectedStroke: this.strokeType });
         });
     }
@@ -283,27 +269,324 @@ export default class ResultsScene extends Phaser.Scene {
             console.log('Checking high score for:', this.strokeType, playerResult.time);
             
             // Check if player's time qualifies for high score
-            const isHighScore = highScoreManager.isHighScore(this.strokeType, playerResult.time);
-            console.log('High score check result:', isHighScore);
+            this.isHighScore = highScoreManager.isHighScore(this.strokeType, playerResult.time);
+            console.log('High score check result:', this.isHighScore);
             
-            if (isHighScore) {
-                console.log('High score detected! Transitioning immediately...');
-                
-                // Transition immediately - no delay
-                this.scene.start('NameEntryScene', {
-                    raceTime: playerResult.time,
-                    strokeType: this.strokeType,
-                    place: playerResult.place,
-                    results: this.results
-                });
-                return; // Exit early
+            if (this.isHighScore) {
+                console.log('High score detected! Showing high score UI...');
+                this.playerResult = playerResult;
             } else {
                 console.log('Time does not qualify for high score');
-                this.handlingHighScore = false; // Ensure buttons work
             }
         } catch (error) {
             console.error('Error in checkForHighScores:', error);
-            this.handlingHighScore = false; // Ensure buttons work if error occurs
+            this.isHighScore = false;
         }
+    }
+
+    createNormalResultsUI() {
+        const width = this.cameras.main.width;
+
+        // Title
+        this.add.text(width / 2, 50, 'Race Results', {
+            font: 'bold 32px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        this.add.text(width / 2, 85, `${this.strokeType.toUpperCase()} - 25m`, {
+            font: '18px Arial',
+            fill: '#cccccc'
+        }).setOrigin(0.5);
+
+        // Display results
+        this.displayResults();
+
+        // Player's result highlight
+        this.highlightPlayerResult();
+
+        // Buttons
+        this.createButtons();
+    }
+
+    createHighScoreUI() {
+        const width = this.cameras.main.width;
+
+        // Celebration background effect
+        this.createCelebrationEffect();
+
+        // Title
+        this.add.text(width / 2, 80, 'NEW HIGH SCORE!', {
+            font: 'bold 48px Arial',
+            fill: '#ffd700',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        // Race details
+        this.add.text(width / 2, 140, `${this.strokeType.toUpperCase()} - ${highScoreManager.constructor.formatTime(this.playerResult.time)}`, {
+            font: 'bold 24px Arial',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+
+        if (this.playerResult.place) {
+            this.add.text(width / 2, 170, `Finished ${highScoreManager.constructor.getRankSuffix(this.playerResult.place)} Place`, {
+                font: '18px Arial',
+                fill: '#ffff00'
+            }).setOrigin(0.5);
+        }
+
+        // Continue button
+        const continueBtn = this.add.rectangle(width / 2, 250, 200, 50, 0x4a90e2)
+            .setInteractive();
+        
+        this.add.text(width / 2, 250, 'Enter Name for High Score', {
+            font: '16px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        continueBtn.on('pointerdown', () => {
+            this.switchToNameEntry();
+        });
+
+        // Skip button
+        const skipBtn = this.add.rectangle(width / 2, 320, 150, 40, 0x666666)
+            .setInteractive();
+        
+        this.add.text(width / 2, 320, 'Skip High Score', {
+            font: '14px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        skipBtn.on('pointerdown', () => {
+            this.switchToNormalResults();
+        });
+    }
+
+    createNameEntryUI() {
+        const width = this.cameras.main.width;
+
+        // Clear screen
+        this.children.removeAll();
+        this.add.rectangle(width / 2, this.cameras.main.height / 2, width, this.cameras.main.height, 0x001133);
+
+        // Title
+        this.add.text(width / 2, 100, 'Enter Your Name', {
+            font: 'bold 32px Arial',
+            fill: '#ffd700'
+        }).setOrigin(0.5);
+
+        // Time display
+        this.add.text(width / 2, 140, `${this.strokeType.toUpperCase()} - ${highScoreManager.constructor.formatTime(this.playerResult.time)}`, {
+            font: '20px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        // Name input field
+        this.createNameInput();
+
+        // Buttons
+        this.createNameEntryButtons();
+
+        // Setup keyboard
+        this.setupKeyboardInput();
+    }
+
+    createCelebrationEffect() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        // Create floating particles
+        for (let i = 0; i < 20; i++) {
+            const particle = this.add.circle(
+                Phaser.Math.Between(0, width),
+                Phaser.Math.Between(0, height),
+                Phaser.Math.Between(3, 8),
+                Phaser.Math.Choose([0xffd700, 0xffff00, 0xff6600, 0x00ff00]),
+                0.8
+            );
+
+            this.tweens.add({
+                targets: particle,
+                y: particle.y - Phaser.Math.Between(100, 200),
+                x: particle.x + Phaser.Math.Between(-50, 50),
+                alpha: 0,
+                duration: Phaser.Math.Between(2000, 4000),
+                repeat: -1,
+                delay: Phaser.Math.Between(0, 2000)
+            });
+        }
+    }
+
+    switchToNameEntry() {
+        this.nameEntryMode = true;
+        this.createNameEntryUI();
+    }
+
+    switchToNormalResults() {
+        this.isHighScore = false;
+        this.nameEntryMode = false;
+        this.children.removeAll();
+        this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, 
+            this.cameras.main.width, this.cameras.main.height, 0x001133);
+        this.createNormalResultsUI();
+    }
+
+    createNameInput() {
+        const width = this.cameras.main.width;
+
+        // Input field background
+        this.nameInputBg = this.add.rectangle(width / 2, 200, 300, 50, 0x333333);
+        this.nameInputBg.setStrokeStyle(3, 0x66ccff);
+
+        // Name text display
+        this.nameText = this.add.text(width / 2, 200, this.playerName || 'Type your name...', {
+            font: '24px Arial',
+            fill: this.playerName ? '#ffffff' : '#888888'
+        }).setOrigin(0.5);
+
+        // Cursor
+        this.cursor = this.add.text(width / 2 + this.getTextWidth() / 2, 200, '|', {
+            font: '24px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0, 0.5);
+
+        // Blinking cursor animation
+        this.tweens.add({
+            targets: this.cursor,
+            alpha: 0,
+            duration: 500,
+            repeat: -1,
+            yoyo: true
+        });
+    }
+
+    createNameEntryButtons() {
+        const width = this.cameras.main.width;
+
+        // Submit button
+        const submitBtn = this.add.rectangle(width / 2 - 100, 280, 120, 50, 0x4a90e2)
+            .setInteractive();
+        
+        this.add.text(width / 2 - 100, 280, 'SUBMIT', {
+            font: 'bold 18px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        submitBtn.on('pointerdown', () => {
+            this.submitScore();
+        });
+
+        // Skip button
+        const skipBtn = this.add.rectangle(width / 2 + 100, 280, 120, 50, 0x666666)
+            .setInteractive();
+        
+        this.add.text(width / 2 + 100, 280, 'SKIP', {
+            font: 'bold 18px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        skipBtn.on('pointerdown', () => {
+            this.switchToNormalResults();
+        });
+
+        // Instructions
+        this.add.text(width / 2, 340, 'Press ENTER to submit or ESC to skip', {
+            font: '14px Arial',
+            fill: '#cccccc'
+        }).setOrigin(0.5);
+    }
+
+    setupKeyboardInput() {
+        // Clear any existing listeners
+        this.input.keyboard.removeAllListeners();
+        
+        // Handle all keyboard input
+        this.input.keyboard.on('keydown', (event) => {
+            if (!this.nameEntryMode) return;
+
+            const key = event.key;
+
+            if (key === 'Enter') {
+                this.submitScore();
+            } else if (key === 'Escape') {
+                this.switchToNormalResults();
+            } else if (key === 'Backspace') {
+                if (this.playerName.length > 0) {
+                    this.playerName = this.playerName.slice(0, -1);
+                    this.updateNameDisplay();
+                }
+            } else if (key.length === 1 && this.playerName.length < this.maxNameLength) {
+                // Only allow alphanumeric characters and spaces
+                if (/[a-zA-Z0-9 ]/.test(key)) {
+                    this.playerName += key;
+                    this.updateNameDisplay();
+                }
+            }
+        });
+    }
+
+    updateNameDisplay() {
+        if (this.playerName.length > 0) {
+            this.nameText.setText(this.playerName);
+            this.nameText.setFill('#ffffff');
+        } else {
+            this.nameText.setText('Type your name...');
+            this.nameText.setFill('#888888');
+        }
+
+        // Update cursor position
+        this.cursor.x = this.cameras.main.width / 2 + this.getTextWidth() / 2 + 5;
+    }
+
+    getTextWidth() {
+        if (this.playerName.length === 0) return 0;
+        
+        // Create temporary text to measure width
+        const tempText = this.add.text(0, 0, this.playerName, {
+            font: '24px Arial'
+        });
+        const width = tempText.width;
+        tempText.destroy();
+        return width;
+    }
+
+    submitScore() {
+        if (this.playerName.trim().length === 0) {
+            // Flash the input field to indicate name is required
+            this.tweens.add({
+                targets: this.nameInputBg,
+                fillColor: 0xff3333,
+                duration: 200,
+                yoyo: true,
+                onComplete: () => {
+                    this.nameInputBg.setFillStyle(0x333333);
+                }
+            });
+            return;
+        }
+
+        // Add the high score
+        const position = highScoreManager.addHighScore(
+            this.strokeType,
+            this.playerResult.time,
+            this.playerName.trim(),
+            this.playerResult.place
+        );
+
+        // Show confirmation and then switch to normal results
+        const confirmText = this.add.text(this.cameras.main.width / 2, 380, 
+            `Score saved! You're #${position} in ${this.strokeType}!`, {
+            font: 'bold 18px Arial',
+            fill: '#00ff00',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+
+        // Wait a moment then show normal results
+        this.time.delayedCall(2000, () => {
+            this.switchToNormalResults();
+        });
     }
 }

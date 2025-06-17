@@ -12,100 +12,98 @@ export default class MenuScene extends Phaser.Scene {
         // Mobile detection
         this.isMobile = MobileDetection.isMobile();
 
-        // Create animated water background
-        this.createWaterBackground();
+        // Create clean background
+        this.createCleanBackground();
 
-        // Create decorative pool lanes
-        this.createPoolLanes();
+        // Main title - larger and more prominent
+        this.createMainTitle();
 
-        // Main title with shadow effect
-        this.add.text(width / 2 + 3, 103, 'Rolling Hills Racers', {
-            font: 'bold 48px Arial',
-            fill: '#000000'
-        }).setOrigin(0.5);
-        
-        this.add.text(width / 2, 100, 'Rolling Hills Racers', {
-            font: 'bold 48px Arial',
-            fill: '#ffffff',
-            stroke: '#0066cc',
-            strokeThickness: 2
-        }).setOrigin(0.5);
-
-        // Subtitle
-        this.add.text(width / 2, 150, '🏊‍♂️ Championship Swimming Competition 🏊‍♀️', {
-            font: '20px Arial',
-            fill: '#66ccff'
-        }).setOrigin(0.5);
-
-        // Create stroke selection cards
+        // Create stroke selection cards - bigger and cleaner
         this.createStrokeCards();
         
-        // Create high scores button
-        this.createHighScoresButton();
+        // Create bottom buttons section
+        this.createBottomButtons();
 
-        // Game features highlight
-        this.createFeatureHighlights();
-
-        // Instructions with better styling
-        this.createInstructions();
-
-        // Add animated elements
-        this.createAnimatedElements();
+        // Add subtle animated elements
+        this.createSubtleAnimations();
     }
 
-    createWaterBackground() {
+    createCleanBackground() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Gradient water background
+        // Clean gradient background
         const graphics = this.add.graphics();
         
-        // Create gradient effect
-        for (let i = 0; i < height; i++) {
-            const alpha = 0.3 + (i / height) * 0.4;
-            const blue = 0x0066cc + Math.floor((i / height) * 0x002244);
-            graphics.fillStyle(blue, alpha);
-            graphics.fillRect(0, i, width, 1);
-        }
+        // Simple two-tone gradient
+        graphics.fillGradientStyle(0x001133, 0x001133, 0x003366, 0x003366);
+        graphics.fillRect(0, 0, width, height);
 
-        // Add water ripple effects
-        for (let i = 0; i < 5; i++) {
+        // Subtle water texture with minimal elements
+        for (let i = 0; i < 3; i++) {
             const ripple = this.add.circle(
-                Phaser.Math.Between(100, width - 100),
-                Phaser.Math.Between(200, height - 200),
-                Phaser.Math.Between(20, 40),
-                0x66ccff,
+                Phaser.Math.Between(200, width - 200),
+                Phaser.Math.Between(300, height - 300),
+                Phaser.Math.Between(40, 80),
+                0x004488,
                 0.1
             );
             
             this.tweens.add({
                 targets: ripple,
-                scaleX: 2,
-                scaleY: 2,
+                scaleX: 1.5,
+                scaleY: 1.5,
                 alpha: 0,
-                duration: 3000,
+                duration: 4000,
                 repeat: -1,
-                delay: i * 600
+                delay: i * 1500,
+                ease: 'Sine.easeOut'
             });
         }
     }
 
-    createPoolLanes() {
+    createMainTitle() {
         const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
+
+        // Main title - much larger and more prominent
+        const titleSize = this.isMobile ? '56px' : '72px';
+        const subtitleSize = this.isMobile ? '20px' : '28px';
+
+        // Title shadow
+        this.add.text(width / 2 + 4, 124, 'Pool Racer', {
+            font: `bold ${titleSize} Arial`,
+            fill: '#000000',
+            alpha: 0.3
+        }).setOrigin(0.5);
         
-        // Pool lane dividers (decorative)
-        for (let lane = 1; lane < 6; lane++) {
-            const y = (height / 6) * lane;
-            for (let x = 0; x < width; x += 30) {
-                this.add.rectangle(x + 15, y, 15, 3, 0x4488cc, 0.3);
-            }
-        }
+        // Main title
+        const mainTitle = this.add.text(width / 2, 120, 'Pool Racer', {
+            font: `bold ${titleSize} Arial`,
+            fill: '#ffffff',
+            stroke: '#0066cc',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        // Subtitle - cleaner and more readable
+        this.add.text(width / 2, 180, 'Championship Swimming', {
+            font: `${subtitleSize} Arial`,
+            fill: '#66ccff',
+            alpha: 0.9
+        }).setOrigin(0.5);
+
+        // Add subtle glow effect to title
+        this.tweens.add({
+            targets: mainTitle,
+            alpha: 0.9,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     createStrokeCards() {
         const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
 
         const strokes = [
             { name: 'Freestyle', key: 'freestyle', emoji: '🏊‍♂️', desc: 'Fast & Efficient' },
@@ -114,17 +112,18 @@ export default class MenuScene extends Phaser.Scene {
             { name: 'Butterfly', key: 'butterfly', emoji: '🦋', desc: 'Speed & Strength' }
         ];
 
-        this.add.text(width / 2, 220, 'Choose Your Swimming Style', {
-            font: 'bold 24px Arial',
+        // Section title - larger and more prominent
+        this.add.text(width / 2, 260, 'Choose Your Style', {
+            font: this.isMobile ? 'bold 28px Arial' : 'bold 36px Arial',
             fill: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 1
+            stroke: '#0066cc',
+            strokeThickness: 2
         }).setOrigin(0.5);
 
-        // Adjust card sizes for mobile
-        const cardWidth = this.isMobile ? 200 : 250;
-        const cardHeight = this.isMobile ? 70 : 80;
-        const spacing = this.isMobile ? 15 : 20;
+        // Much larger cards with better proportions
+        const cardWidth = this.isMobile ? 280 : 320;
+        const cardHeight = this.isMobile ? 100 : 120;
+        const spacing = this.isMobile ? 25 : 35;
         const totalWidth = (cardWidth * 2) + spacing;
         const startX = (width - totalWidth) / 2;
 
@@ -132,69 +131,71 @@ export default class MenuScene extends Phaser.Scene {
             const row = Math.floor(index / 2);
             const col = index % 2;
             const x = startX + (col * (cardWidth + spacing)) + (cardWidth / 2);
-            const y = 280 + (row * (cardHeight + spacing));
+            const y = 340 + (row * (cardHeight + spacing));
 
-            // Card background with gradient effect
+            // Card background with cleaner design
             const card = this.add.graphics();
-            card.fillGradientStyle(0x0066cc, 0x0066cc, 0x004499, 0x004499);
-            card.fillRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 10);
-            card.lineStyle(2, 0x66ccff, 0.8);
-            card.strokeRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 10);
+            card.fillStyle(0x0066cc, 0.9);
+            card.fillRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 15);
+            card.lineStyle(3, 0x66ccff, 0.8);
+            card.strokeRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 15);
 
             // Interactive area
             const button = this.add.rectangle(x, y, cardWidth, cardHeight, 0x000000, 0)
                 .setInteractive();
 
-            // Stroke emoji
-            this.add.text(x - 80, y - 10, stroke.emoji, {
-                font: '32px Arial'
+            // Stroke emoji - larger
+            this.add.text(x - cardWidth/3, y, stroke.emoji, {
+                font: this.isMobile ? '48px Arial' : '56px Arial'
             }).setOrigin(0.5);
 
-            // Stroke name
-            this.add.text(x + 10, y - 15, stroke.name, {
-                font: 'bold 18px Arial',
+            // Stroke name - larger and better positioned
+            this.add.text(x + cardWidth/6, y - 20, stroke.name, {
+                font: this.isMobile ? 'bold 20px Arial' : 'bold 24px Arial',
                 fill: '#ffffff'
             }).setOrigin(0.5);
 
-            // Description
-            this.add.text(x + 10, y + 10, stroke.desc, {
-                font: '12px Arial',
-                fill: '#cccccc'
+            // Description - larger and more readable
+            this.add.text(x + cardWidth/6, y + 15, stroke.desc, {
+                font: this.isMobile ? '14px Arial' : '16px Arial',
+                fill: '#ccddff'
             }).setOrigin(0.5);
 
             // Hover effects
             button.on('pointerover', () => {
                 card.clear();
-                card.fillGradientStyle(0x0088ff, 0x0088ff, 0x0066cc, 0x0066cc);
-                card.fillRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 10);
-                card.lineStyle(3, 0x88ddff, 1);
-                card.strokeRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 10);
+                card.fillStyle(0x0088ff, 1.0);
+                card.fillRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 15);
+                card.lineStyle(4, 0x88ddff, 1);
+                card.strokeRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 15);
                 
                 this.tweens.add({
                     targets: button,
-                    scaleX: 1.05,
-                    scaleY: 1.05,
-                    duration: 100
+                    scaleX: 1.03,
+                    scaleY: 1.03,
+                    duration: 150,
+                    ease: 'Back.easeOut'
                 });
             });
 
             button.on('pointerout', () => {
                 card.clear();
-                card.fillGradientStyle(0x0066cc, 0x0066cc, 0x004499, 0x004499);
-                card.fillRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 10);
-                card.lineStyle(2, 0x66ccff, 0.8);
-                card.strokeRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 10);
+                card.fillStyle(0x0066cc, 0.9);
+                card.fillRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 15);
+                card.lineStyle(3, 0x66ccff, 0.8);
+                card.strokeRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 15);
                 
                 this.tweens.add({
                     targets: button,
                     scaleX: 1,
                     scaleY: 1,
-                    duration: 100
+                    duration: 150,
+                    ease: 'Back.easeOut'
                 });
             });
 
             button.on('pointerdown', () => {
-                this.cameras.main.flash(200, 255, 255, 255);
+                this.cameras.main.flash(300, 255, 255, 255, 0.3);
                 this.time.delayedCall(200, () => {
                     this.scene.start('RaceScene', { strokeType: stroke.key });
                 });
@@ -202,105 +203,20 @@ export default class MenuScene extends Phaser.Scene {
         });
     }
 
-    createFeatureHighlights() {
-        const width = this.cameras.main.width;
-        
-        const features = [
-            '⚡ Real-time Performance Tracking',
-            '🎯 Precision Timing System',
-            '🏆 Competitive AI Opponents'
-        ];
-
-        features.forEach((feature, index) => {
-            this.add.text(width / 2, 500 + (index * 25), feature, {
-                font: '14px Arial',
-                fill: '#88ccff',
-                align: 'center'
-            }).setOrigin(0.5);
-        });
-    }
-
-    createInstructions() {
+    createBottomButtons() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Instructions box
-        const instructionBox = this.add.graphics();
-        instructionBox.fillStyle(0x000000, 0.7);
-        instructionBox.fillRoundedRect(width/2 - 300, height - 120, 600, 80, 10);
-        instructionBox.lineStyle(2, 0x66ccff, 0.8);
-        instructionBox.strokeRoundedRect(width/2 - 300, height - 120, 600, 80, 10);
-
-        this.add.text(width / 2, height - 100, '🎮 CONTROLS', {
-            font: 'bold 16px Arial',
-            fill: '#66ccff'
-        }).setOrigin(0.5);
-
-        const controlText = this.isMobile ? 
-            'TAP buttons to dive and swim alternately' :
-            'SPACEBAR to dive • LEFT/RIGHT arrows to swim alternately';
-            
-        this.add.text(width / 2, height - 75, controlText, {
-            font: this.isMobile ? '12px Arial' : '14px Arial',
-            fill: '#ffffff'
-        }).setOrigin(0.5);
-
-        this.add.text(width / 2, height - 55, 'Perfect timing = maximum speed!', {
-            font: this.isMobile ? '10px Arial' : '12px Arial',
-            fill: '#cccccc'
-        }).setOrigin(0.5);
-    }
-
-    createAnimatedElements() {
-        const width = this.cameras.main.width;
-
-        // Floating bubbles
-        for (let i = 0; i < 8; i++) {
-            const bubble = this.add.circle(
-                Phaser.Math.Between(50, width - 50),
-                Phaser.Math.Between(600, 720),
-                Phaser.Math.Between(3, 8),
-                0x88ccff,
-                0.6
-            );
-
-            this.tweens.add({
-                targets: bubble,
-                y: -20,
-                duration: Phaser.Math.Between(3000, 6000),
-                repeat: -1,
-                delay: i * 500
-            });
-        }
-
-        // Pulsing title effect
-        this.tweens.add({
-            targets: this.children.list.filter(child => 
-                child.type === 'Text' && child.text === 'Rolling Hills Racers'
-            )[1], // Get the main title (not shadow)
-            scaleX: 1.02,
-            scaleY: 1.02,
-            duration: 2000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-    }
-
-    createHighScoresButton() {
-        const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
-
-        // High scores button
-        const buttonWidth = this.isMobile ? 200 : 250;
-        const buttonHeight = this.isMobile ? 50 : 60;
-        const buttonY = height - 150;
+        // High scores button - larger and more prominent
+        const buttonWidth = this.isMobile ? 240 : 300;
+        const buttonHeight = this.isMobile ? 60 : 70;
+        const buttonY = height - 120;
 
         const highScoresBg = this.add.rectangle(width / 2, buttonY, buttonWidth, buttonHeight, 0x4a90e2);
-        highScoresBg.setStrokeStyle(3, 0x66ccff);
+        highScoresBg.setStrokeStyle(4, 0x66ccff);
 
         const highScoresText = this.add.text(width / 2, buttonY, '🏆 HIGH SCORES', {
-            font: this.isMobile ? 'bold 16px Arial' : 'bold 20px Arial',
+            font: this.isMobile ? 'bold 20px Arial' : 'bold 26px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
 
@@ -308,7 +224,10 @@ export default class MenuScene extends Phaser.Scene {
             .setInteractive();
 
         highScoresButton.on('pointerdown', () => {
-            this.scene.start('HighScoreScene');
+            this.cameras.main.flash(200, 255, 255, 255, 0.2);
+            this.time.delayedCall(100, () => {
+                this.scene.start('HighScoreScene');
+            });
         });
 
         highScoresButton.on('pointerover', () => {
@@ -317,7 +236,8 @@ export default class MenuScene extends Phaser.Scene {
                 targets: [highScoresBg, highScoresText],
                 scaleX: 1.05,
                 scaleY: 1.05,
-                duration: 100
+                duration: 150,
+                ease: 'Back.easeOut'
             });
         });
 
@@ -327,8 +247,49 @@ export default class MenuScene extends Phaser.Scene {
                 targets: [highScoresBg, highScoresText],
                 scaleX: 1.0,
                 scaleY: 1.0,
-                duration: 100
+                duration: 150,
+                ease: 'Back.easeOut'
             });
         });
+
+        // Simple instructions - cleaner and less cluttered
+        this.add.text(width / 2, height - 60, this.isMobile ? 
+            'TAP to dive, then alternate LEFT/RIGHT to swim' :
+            'SPACEBAR to dive • LEFT/RIGHT arrows to swim', {
+            font: this.isMobile ? '14px Arial' : '16px Arial',
+            fill: '#88ccff',
+            alpha: 0.8
+        }).setOrigin(0.5);
+
+        this.add.text(width / 2, height - 35, 'Perfect timing = maximum speed!', {
+            font: this.isMobile ? '12px Arial' : '14px Arial',
+            fill: '#66aadd',
+            alpha: 0.7
+        }).setOrigin(0.5);
+    }
+
+    createSubtleAnimations() {
+        // Minimal floating elements for ambiance
+        const width = this.cameras.main.width;
+
+        for (let i = 0; i < 4; i++) {
+            const bubble = this.add.circle(
+                Phaser.Math.Between(100, width - 100),
+                Phaser.Math.Between(500, 700),
+                Phaser.Math.Between(4, 8),
+                0x66aadd,
+                0.3
+            );
+
+            this.tweens.add({
+                targets: bubble,
+                y: bubble.y - 200,
+                alpha: 0,
+                duration: Phaser.Math.Between(4000, 8000),
+                repeat: -1,
+                delay: i * 1000,
+                ease: 'Sine.easeOut'
+            });
+        }
     }
 }
