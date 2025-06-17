@@ -287,51 +287,16 @@ export default class ResultsScene extends Phaser.Scene {
             console.log('High score check result:', isHighScore);
             
             if (isHighScore) {
-                console.log('High score detected! Transitioning to name entry...');
+                console.log('High score detected! Transitioning immediately...');
                 
-                // Mark that we're handling high scores to prevent button clicks
-                this.handlingHighScore = true;
-                
-                // Show visual feedback
-                const highScoreText = this.add.text(this.cameras.main.width / 2, 100, 'NEW HIGH SCORE!', {
-                    font: 'bold 24px Arial',
-                    fill: '#ffd700',
-                    stroke: '#000000',
-                    strokeThickness: 2
-                }).setOrigin(0.5);
-                
-                // Delay to let player see results first, with fallback
-                const transition = this.time.delayedCall(2000, () => {
-                    console.log('Attempting scene transition...');
-                    this.scene.start('NameEntryScene', {
-                        raceTime: playerResult.time,
-                        strokeType: this.strokeType,
-                        place: playerResult.place,
-                        results: this.results
-                    });
+                // Transition immediately - no delay
+                this.scene.start('NameEntryScene', {
+                    raceTime: playerResult.time,
+                    strokeType: this.strokeType,
+                    place: playerResult.place,
+                    results: this.results
                 });
-                
-                // Fallback: Allow manual skip after 5 seconds
-                this.time.delayedCall(5000, () => {
-                    if (this.handlingHighScore) {
-                        console.log('Adding manual skip option...');
-                        const skipText = this.add.text(this.cameras.main.width / 2, 150, 'Click anywhere to continue', {
-                            font: '16px Arial',
-                            fill: '#ffffff'
-                        }).setOrigin(0.5);
-                        
-                        this.input.once('pointerdown', () => {
-                            this.handlingHighScore = false;
-                            this.scene.start('NameEntryScene', {
-                                raceTime: playerResult.time,
-                                strokeType: this.strokeType,
-                                place: playerResult.place,
-                                results: this.results
-                            });
-                        });
-                    }
-                });
-                
+                return; // Exit early
             } else {
                 console.log('Time does not qualify for high score');
                 this.handlingHighScore = false; // Ensure buttons work
