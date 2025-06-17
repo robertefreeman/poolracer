@@ -113,12 +113,22 @@ export default class ResultsScene extends Phaser.Scene {
         this.results.forEach((result, index) => {
             const y = startY + 25 + (index * 50); // Increased spacing to 50px
             const isPlayer = result.swimmer.isPlayer;
+            const isDisqualified = isPlayer && result.swimmer.missTapCount > 2;
             
-            // Place
-            const placeText = this.getPlaceText(result.place);
+            // Place - show DQ if disqualified
+            let placeText;
+            let placeColor;
+            if (isDisqualified) {
+                placeText = 'DQ';
+                placeColor = '#ff0000';
+            } else {
+                placeText = this.getPlaceText(result.place);
+                placeColor = isPlayer ? '#ffff00' : '#ffffff';
+            }
+            
             this.add.text(80, y, placeText, {
                 font: 'bold 18px Arial',
-                fill: isPlayer ? '#ffff00' : '#ffffff'
+                fill: placeColor
             }).setOrigin(0.5);
 
             // Team (based on lane) - shortened team names
@@ -128,11 +138,18 @@ export default class ResultsScene extends Phaser.Scene {
                 fill: isPlayer ? '#ffff00' : '#cccccc'
             }).setOrigin(0.5);
 
-            // Time
-            this.add.text(350, y, `${result.time.toFixed(2)}s`, {
+            // Time - show with strikethrough if DQ
+            const timeText = `${result.time.toFixed(2)}s`;
+            const timeElement = this.add.text(350, y, timeText, {
                 font: '18px Arial',
-                fill: isPlayer ? '#ffff00' : '#ffffff'
+                fill: isDisqualified ? '#ff6666' : (isPlayer ? '#ffff00' : '#ffffff')
             }).setOrigin(0.5);
+            
+            // Add strikethrough for DQ times
+            if (isDisqualified) {
+                this.add.line(350, y, -timeText.length * 5, 0, timeText.length * 5, 0, 0xff0000)
+                    .setLineWidth(2);
+            }
 
             // Stroke count
             this.add.text(450, y, `${result.swimmer.strokeCount}`, {
@@ -142,18 +159,30 @@ export default class ResultsScene extends Phaser.Scene {
 
             // Player indicator and stats
             if (isPlayer) {
-                this.add.text(550, y - 10, '(YOU)', {
-                    font: 'bold 14px Arial',
-                    fill: '#ff6b35'
-                }).setOrigin(0.5);
-                
-                const accuracy = result.swimmer.totalTapCount > 0 ? 
-                    ((result.swimmer.totalTapCount - result.swimmer.missTapCount) / result.swimmer.totalTapCount * 100) : 100;
-                
-                this.add.text(550, y + 8, `${accuracy.toFixed(0)}% acc`, {
-                    font: '12px Arial',
-                    fill: accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000'
-                }).setOrigin(0.5);
+                if (isDisqualified) {
+                    this.add.text(550, y - 10, '(YOU)', {
+                        font: 'bold 14px Arial',
+                        fill: '#ff0000'
+                    }).setOrigin(0.5);
+                    
+                    this.add.text(550, y + 8, `${result.swimmer.missTapCount} misses`, {
+                        font: '12px Arial',
+                        fill: '#ff0000'
+                    }).setOrigin(0.5);
+                } else {
+                    this.add.text(550, y - 10, '(YOU)', {
+                        font: 'bold 14px Arial',
+                        fill: '#ff6b35'
+                    }).setOrigin(0.5);
+                    
+                    const accuracy = result.swimmer.totalTapCount > 0 ? 
+                        ((result.swimmer.totalTapCount - result.swimmer.missTapCount) / result.swimmer.totalTapCount * 100) : 100;
+                    
+                    this.add.text(550, y + 8, `${accuracy.toFixed(0)}% acc`, {
+                        font: '12px Arial',
+                        fill: accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000'
+                    }).setOrigin(0.5);
+                }
             }
         });
     }
@@ -163,37 +192,44 @@ export default class ResultsScene extends Phaser.Scene {
         if (!playerResult) return;
 
         const width = this.cameras.main.width;
+        const isDisqualified = playerResult.swimmer.missTapCount > 2;
         let message = '';
         let color = '#ffffff';
 
-        switch (playerResult.place) {
-            case 1:
-                message = '🏆 FIRST PLACE! Excellent swimming!';
-                color = '#ffd700';
-                break;
-            case 2:
-                message = '🥈 Second place! Great job!';
-                color = '#c0c0c0';
-                break;
-            case 3:
-                message = '🥉 Third place! Well done!';
-                color = '#cd7f32';
-                break;
-            default:
-                message = `${this.getPlaceText(playerResult.place)} - Keep practicing!`;
-                color = '#ffffff';
+        if (isDisqualified) {
+            message = '❌ DISQUALIFIED - Too many missed strokes (3+ misses)';
+            color = '#ff0000';
+        } else {
+            switch (playerResult.place) {
+                case 1:
+                    message = '🏆 FIRST PLACE! Excellent swimming!';
+                    color = '#ffd700';
+                    break;
+                case 2:
+                    message = '🥈 Second place! Great job!';
+                    color = '#c0c0c0';
+                    break;
+                case 3:
+                    message = '🥉 Third place! Well done!';
+                    color = '#cd7f32';
+                    break;
+                default:
+                    message = `${this.getPlaceText(playerResult.place)} - Keep practicing!`;
+                    color = '#ffffff';
+            }
         }
 
-        this.add.text(width / 2, 380, message, {
+        // Position notifications below high scores button (y = 620+)
+        this.add.text(width / 2, 620, message, {
             font: 'bold 20px Arial',
             fill: color,
             backgroundColor: '#000000',
             padding: { x: 15, y: 8 }
         }).setOrigin(0.5);
 
-        // High score celebration if applicable
-        if (this.isHighScore && this.highScorePosition) {
-            this.add.text(width / 2, 410, `🎉 NEW HIGH SCORE! You're #${this.highScorePosition} in ${this.strokeType}! 🎉`, {
+        // High score celebration if applicable (only if not DQ)
+        if (!isDisqualified && this.isHighScore && this.highScorePosition) {
+            this.add.text(width / 2, 650, `🎉 NEW HIGH SCORE! You're #${this.highScorePosition} in ${this.strokeType}! 🎉`, {
                 font: 'bold 18px Arial',
                 fill: '#00ff00',
                 backgroundColor: '#000000',
@@ -202,8 +238,9 @@ export default class ResultsScene extends Phaser.Scene {
         }
 
         // Performance analysis
-        const analysis = this.getPerformanceAnalysis(playerResult.swimmer);
-        this.add.text(width / 2, this.isHighScore ? 450 : 420, analysis, {
+        const analysis = this.getPerformanceAnalysis(playerResult.swimmer, isDisqualified);
+        const analysisY = (!isDisqualified && this.isHighScore) ? 680 : 650;
+        this.add.text(width / 2, analysisY, analysis, {
             font: '14px Arial',
             fill: '#cccccc',
             align: 'center'
