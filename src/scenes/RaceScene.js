@@ -622,21 +622,21 @@ export default class RaceScene extends Phaser.Scene {
     calculateDiveTimingBonus(currentTime) {
         const timeSinceRaceStart = currentTime - this.raceStartTime;
         
-        // Perfect start: within 100ms of race start (0.1 seconds)
+        // Perfect start: within 100ms of race start (0.1 seconds) - reduced bonus
         if (timeSinceRaceStart <= 100) {
-            return { multiplier: 2.0, type: 'perfect' };
+            return { multiplier: 1.4, type: 'perfect' };
         }
-        // Excellent start: within 200ms
+        // Excellent start: within 200ms - reduced bonus
         else if (timeSinceRaceStart <= 200) {
-            return { multiplier: 1.8, type: 'excellent' };
+            return { multiplier: 1.3, type: 'excellent' };
         }
-        // Great start: within 300ms
+        // Great start: within 300ms - reduced bonus
         else if (timeSinceRaceStart <= 300) {
-            return { multiplier: 1.6, type: 'great' };
+            return { multiplier: 1.2, type: 'great' };
         }
-        // Good start: within 500ms
+        // Good start: within 500ms - reduced bonus
         else if (timeSinceRaceStart <= 500) {
-            return { multiplier: 1.4, type: 'good' };
+            return { multiplier: 1.1, type: 'good' };
         }
         // Normal start: within 1000ms
         else if (timeSinceRaceStart <= 1000) {
@@ -644,7 +644,7 @@ export default class RaceScene extends Phaser.Scene {
         }
         // Late start: after 1000ms (shouldn't happen as canDive becomes false)
         else {
-            return { multiplier: 0.8, type: 'late' };
+            return { multiplier: 0.9, type: 'late' };
         }
     }
     
