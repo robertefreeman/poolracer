@@ -2,7 +2,10 @@
 console.log('Loading main.js...');
 
 // Import scenes one by one to identify issues
+import PreloadScene from './scenes/PreloadScene.js';
 import MenuScene from './scenes/MenuScene.js';
+import RaceScene from './scenes/RaceScene.js';
+import ResultsScene from './scenes/ResultsScene.js';
 
 // Simple but working configuration
 const config = {
@@ -15,7 +18,7 @@ const config = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
-    scene: [MenuScene]
+    scene: [PreloadScene, MenuScene, RaceScene, ResultsScene]
 };
 
 console.log('Creating game with config:', config);
