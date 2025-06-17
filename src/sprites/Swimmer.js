@@ -121,8 +121,8 @@ export default class Swimmer {
         this.head = this.scene.add.circle(headX, this.y, 5, skinColor);
         this.head.setStrokeStyle(1, 0xd4a574, 1); // Subtle darker outline for better definition
         
-        // Create swim cap (half the size of head)
-        this.cap = this.scene.add.circle(headX, this.y - 1, 2.5, capColor);
+        // Create swim cap (front half of head toward finish line)
+        this.cap = this.scene.add.arc(headX + 2, this.y, 5, 0, Math.PI, false, capColor);
         this.cap.setStrokeStyle(0.5, 0x000000, 0.3); // Subtle outline for cap
         
         // Create arms (skin tone)
@@ -261,7 +261,7 @@ export default class Swimmer {
             const bobOffset = Math.sin(time * 0.008) * 2;
             this.body.y = this.y + bobOffset;
             this.head.y = this.y + bobOffset;
-            this.cap.y = this.y + bobOffset - 1; // Cap moves with head but slightly offset
+            this.cap.y = this.y + bobOffset; // Cap moves with head
             // Don't bob arms and legs as they have their own stroke animations
         }
     }
@@ -415,8 +415,8 @@ export default class Swimmer {
                 // Head bobs with dolphin motion (ensure head stays at front)
                 this.head.x = this.x + 12; // Keep head at front
                 this.head.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
-                this.cap.x = this.x + 12; // Cap follows head
-                this.cap.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3 - 1;
+                this.cap.x = this.x + 14; // Cap follows head (front half)
+                this.cap.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
                 break;
         }
     }

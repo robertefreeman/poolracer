@@ -95,8 +95,9 @@ export default class ResultsScene extends Phaser.Scene {
                 fill: isPlayer ? '#ffff00' : '#ffffff'
             });
 
-            // Lane
-            this.add.text(220, y, `Lane ${result.swimmer.lane + 1}`, {
+            // Team (based on lane)
+            const teamName = this.getTeamName(result.swimmer.lane);
+            this.add.text(220, y, teamName, {
                 font: '16px Arial',
                 fill: isPlayer ? '#ffff00' : '#cccccc'
             });
@@ -225,6 +226,13 @@ export default class ResultsScene extends Phaser.Scene {
         const suffixes = ['th', 'st', 'nd', 'rd'];
         const suffix = (place > 3) ? suffixes[0] : suffixes[place];
         return `${place}${suffix}`;
+    }
+
+    getTeamName(lane) {
+        // RH Seahawks: lanes 1,3,5 (indices 0,2,4)
+        // Ravensworth Ravens: lanes 2,4,6 (indices 1,3,5)
+        const isSeahawks = lane % 2 === 0;
+        return isSeahawks ? 'RH Seahawks' : 'Ravensworth Ravens';
     }
 
     createButtons() {
