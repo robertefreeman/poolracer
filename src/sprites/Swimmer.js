@@ -190,12 +190,24 @@ export default class Swimmer {
         
         switch (this.strokeType) {
             case 'freestyle':
-                // Alternating arm strokes
-                const freestyleOffset = Math.sin(this.animFrame * Math.PI / 4) * (4 + intensity);
-                this.leftArm.y = this.y - 8 + freestyleOffset;
-                this.rightArm.y = this.y + 8 - freestyleOffset;
-                this.leftArm.rotation = Math.sin(this.animFrame * Math.PI / 4) * 0.3;
-                this.rightArm.rotation = -Math.sin(this.animFrame * Math.PI / 4) * 0.3;
+                // Alternating arm strokes with reach and pull
+                const freestylePhase = Math.sin(this.animFrame * Math.PI / 4);
+                const armReach = freestylePhase * (4 + intensity);
+                
+                // Alternating arm movements
+                this.leftArm.y = this.y - 8 + armReach;
+                this.rightArm.y = this.y + 8 - armReach;
+                
+                // Arms extend forward during reach phase
+                this.leftArm.x = this.x - 4 + Math.max(0, freestylePhase) * 3;
+                this.rightArm.x = this.x - 4 + Math.max(0, -freestylePhase) * 3;
+                
+                // Enhanced arm rotation for stroke motion
+                this.leftArm.rotation = freestylePhase * 0.4;
+                this.rightArm.rotation = -freestylePhase * 0.4;
+                
+                // Slight body roll for freestyle
+                this.body.rotation = freestylePhase * 0.05;
                 break;
                 
             case 'backstroke':
@@ -214,23 +226,57 @@ export default class Swimmer {
                 break;
                 
             case 'breaststroke':
-                // Synchronized wide arm movements
-                const breastOffset = Math.sin(this.animFrame * Math.PI / 2) * (6 + intensity);
-                this.leftArm.y = this.y - 10 + breastOffset;
-                this.rightArm.y = this.y + 10 - breastOffset;
-                this.leftArm.width = 8 + Math.abs(breastOffset);
-                this.rightArm.width = 8 + Math.abs(breastOffset);
+                // Synchronized wide arm movements - arms sweep out and in
+                const breastPhase = Math.sin(this.animFrame * Math.PI / 3) * (1 + intensity * 0.5);
+                const armSweep = Math.abs(breastPhase) * 8; // Arms sweep wider
+                
+                // Arms move out and in synchronously
+                this.leftArm.y = this.y - 8 - armSweep;
+                this.rightArm.y = this.y + 8 + armSweep;
+                
+                // Arms extend forward and pull back
+                this.leftArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 3) * 4;
+                this.rightArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 3) * 4;
+                
+                // Arms get wider during sweep
+                this.leftArm.width = 8 + armSweep * 0.5;
+                this.rightArm.width = 8 + armSweep * 0.5;
+                
+                // Slight rotation for sweep motion
+                this.leftArm.rotation = breastPhase * 0.3;
+                this.rightArm.rotation = -breastPhase * 0.3;
+                
+                // Body undulation for breaststroke
+                this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 3) * 0.15;
                 break;
                 
             case 'butterfly':
-                // Synchronized butterfly strokes
-                const butterflyOffset = Math.sin(this.animFrame * Math.PI / 3) * (5 + intensity);
-                this.leftArm.y = this.y - 8 + butterflyOffset;
-                this.rightArm.y = this.y + 8 + butterflyOffset; // Both arms move together
-                this.leftArm.rotation = Math.sin(this.animFrame * Math.PI / 3) * 0.5;
-                this.rightArm.rotation = Math.sin(this.animFrame * Math.PI / 3) * 0.5;
-                // Body undulation
-                this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 3) * 0.2;
+                // Synchronized butterfly strokes - dramatic dolphin motion
+                const butterflyPhase = Math.sin(this.animFrame * Math.PI / 2.5) * (1 + intensity * 0.3);
+                const wingSpan = Math.abs(butterflyPhase) * 6;
+                
+                // Both arms move together in butterfly motion
+                this.leftArm.y = this.y - 8 + butterflyPhase * 4;
+                this.rightArm.y = this.y + 8 + butterflyPhase * 4;
+                
+                // Arms sweep forward and back together
+                this.leftArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
+                this.rightArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
+                
+                // Dramatic arm rotation for butterfly stroke
+                this.leftArm.rotation = butterflyPhase * 0.7;
+                this.rightArm.rotation = butterflyPhase * 0.7;
+                
+                // Arms extend during stroke
+                this.leftArm.width = 8 + wingSpan * 0.3;
+                this.rightArm.width = 8 + wingSpan * 0.3;
+                
+                // Enhanced body undulation - dolphin kick motion
+                this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 2.5) * 0.25;
+                this.body.rotation = Math.sin(this.animFrame * Math.PI / 2.5) * 0.1; // Body waves
+                
+                // Head bobs with dolphin motion
+                this.head.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
                 break;
         }
     }
