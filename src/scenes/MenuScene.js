@@ -76,14 +76,14 @@ export default class MenuScene extends Phaser.Scene {
         const subtitleSize = this.isMobile ? '20px' : '28px';
 
         // Title shadow
-        this.add.text(width / 2 + 4, 124, 'Pool Racer', {
+        this.add.text(width / 2 + 4, 124, 'Rolling Hills Racers', {
             font: `bold ${titleSize} Arial`,
             fill: '#000000',
             alpha: 0.3
         }).setOrigin(0.5);
         
         // Main title
-        const mainTitle = this.add.text(width / 2, 120, 'Pool Racer', {
+        const mainTitle = this.add.text(width / 2, 120, 'Rolling Hills Racers', {
             font: `bold ${titleSize} Arial`,
             fill: '#ffffff',
             stroke: '#0066cc',
