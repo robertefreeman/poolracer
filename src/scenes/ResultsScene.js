@@ -208,6 +208,8 @@ export default class ResultsScene extends Phaser.Scene {
         });
 
         raceAgainBtn.on('pointerdown', () => {
+            // Prevent clicking if handling high score
+            if (this.handlingHighScore) return;
             this.scene.start('RaceScene', { strokeType: this.strokeType });
         });
 
@@ -229,6 +231,8 @@ export default class ResultsScene extends Phaser.Scene {
         });
 
         menuBtn.on('pointerdown', () => {
+            // Prevent clicking if handling high score
+            if (this.handlingHighScore) return;
             this.scene.start('MenuScene');
         });
 
@@ -256,6 +260,8 @@ export default class ResultsScene extends Phaser.Scene {
         });
 
         highScoresBtn.on('pointerdown', () => {
+            // Prevent clicking if handling high score
+            if (this.handlingHighScore) return;
             this.scene.start('HighScoreScene', { selectedStroke: this.strokeType });
         });
     }
@@ -265,10 +271,20 @@ export default class ResultsScene extends Phaser.Scene {
         if (this.showHighScores) return;
 
         const playerResult = this.results.find(r => r.swimmer.isPlayer);
-        if (!playerResult) return;
+        if (!playerResult) {
+            console.log('No player result found');
+            return;
+        }
 
+        console.log('Checking high score for:', this.strokeType, playerResult.time);
+        
         // Check if player's time qualifies for high score
         if (highScoreManager.isHighScore(this.strokeType, playerResult.time)) {
+            console.log('High score detected! Transitioning to name entry...');
+            
+            // Mark that we're handling high scores to prevent button clicks
+            this.handlingHighScore = true;
+            
             // Delay to let player see results first
             this.time.delayedCall(2000, () => {
                 this.scene.start('NameEntryScene', {
@@ -278,6 +294,8 @@ export default class ResultsScene extends Phaser.Scene {
                     results: this.results
                 });
             });
+        } else {
+            console.log('Time does not qualify for high score');
         }
     }
 }

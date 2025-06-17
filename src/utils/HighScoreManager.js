@@ -37,16 +37,27 @@ export class HighScoreManager {
 
     // Check if a time qualifies for high score (lower time is better)
     isHighScore(strokeType, time) {
-        const strokeScores = this.scores[strokeType] || [];
-        
-        // If less than max scores, it's automatically a high score
-        if (strokeScores.length < this.maxScores) {
-            return true;
+        try {
+            const strokeScores = this.scores[strokeType] || [];
+            
+            console.log(`Checking high score for ${strokeType}: ${time}s`);
+            console.log(`Current scores:`, strokeScores);
+            
+            // If less than max scores, it's automatically a high score
+            if (strokeScores.length < this.maxScores) {
+                console.log(`Qualifies: Less than ${this.maxScores} scores exist`);
+                return true;
+            }
+            
+            // Check if time is better than the worst high score
+            const worstScore = strokeScores[strokeScores.length - 1];
+            const qualifies = time < worstScore.time;
+            console.log(`Worst score: ${worstScore.time}s, Qualifies: ${qualifies}`);
+            return qualifies;
+        } catch (error) {
+            console.error('Error checking high score:', error);
+            return false;
         }
-        
-        // Check if time is better than the worst high score
-        const worstScore = strokeScores[strokeScores.length - 1];
-        return time < worstScore.time;
     }
 
     // Add a new high score
