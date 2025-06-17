@@ -133,29 +133,27 @@ export default class RaceScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
         
-        // Distance markers with enhanced styling (25m pool)
-        const distances = ['8m', '17m', '25m'];
-        for (let i = 1; i < 4; i++) {
-            const x = 80 + (i * 280);
-            const marker = this.add.rectangle(x, height / 2, 2, height, 0xcccccc);
-            
-            this.add.text(x - 10, 10, distances[i-1], {
-                font: '12px Arial',
-                fill: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 1
-            });
-            
-            // Subtle marker animation
-            this.tweens.add({
-                targets: marker,
-                alpha: 0.7,
-                duration: 1500 + (i * 200),
-                repeat: -1,
-                yoyo: true,
-                ease: 'Sine.easeInOut'
-            });
-        }
+        // Distance markers with enhanced styling (25m pool - only show halfway point)
+        // Halfway marker at 12.5m
+        const halfwayX = 80 + (1120 / 2); // 1120 is total pool length in pixels
+        const halfwayMarker = this.add.rectangle(halfwayX, height / 2, 2, height, 0xcccccc);
+        
+        this.add.text(halfwayX - 15, 10, '12.5m', {
+            font: '12px Arial',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 1
+        });
+        
+        // Subtle marker animation
+        this.tweens.add({
+            targets: halfwayMarker,
+            alpha: 0.7,
+            duration: 1500,
+            repeat: -1,
+            yoyo: true,
+            ease: 'Sine.easeInOut'
+        });
     }
     
     createSwimmers() {

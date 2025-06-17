@@ -299,7 +299,7 @@ export default class Swimmer {
         const frequencyRatio = Math.min(clicksPerSecond / this.maxClickFrequency, 1.0);
         // Use square root for diminishing returns on frequency bonus
         const diminishedRatio = Math.sqrt(frequencyRatio);
-        this.frequencySpeedMultiplier = 1.0 + (diminishedRatio * 0.2); // Further reduced from 30% to 20% max bonus
+        this.frequencySpeedMultiplier = 1.0 + (diminishedRatio * 0.1); // Reduced from 20% to 10% max bonus
     }
     
     // Option C: Calculate click rate multiplier based on recent clicks
@@ -326,7 +326,7 @@ export default class Swimmer {
             // Faster clicking gets bonus but with diminishing returns
             // Use logarithmic scaling to reduce effectiveness of very fast clicking
             const bonusRatio = Math.log(rateRatio) / Math.log(3); // Diminishing returns curve
-            this.clickRateMultiplier = Math.min(1.0 + (bonusRatio * 0.3), 1.4); // Further reduced max from 1.6x to 1.4x
+            this.clickRateMultiplier = Math.min(1.0 + (bonusRatio * 0.2), 1.2); // Reduced max from 1.4x to 1.2x
         } else {
             // Slower clicking gets penalty (down to 0.5x speed for very slow clicking)
             this.clickRateMultiplier = Math.max(0.5 + (rateRatio * 0.5), 0.5);
@@ -375,11 +375,11 @@ export default class Swimmer {
             // Timing bonus for good rhythm (250-700ms for tighter timing window)
             if (this.strokeCount > 1) {
                 if (timeSinceLastStroke >= 250 && timeSinceLastStroke <= 700) {
-                    momentumGain += 10; // Further reduced bonus from 15 to 10
+                    momentumGain += 5; // Reduced bonus from 10 to 5
                 } else if (timeSinceLastStroke < 250) {
-                    momentumGain += 3; // Further reduced bonus from 5 to 3
+                    momentumGain += 2; // Reduced bonus from 3 to 2
                 } else if (timeSinceLastStroke > 1000) {
-                    momentumGain -= 20; // Increased penalty from 15 to 20
+                    momentumGain -= 20; // Keep penalty the same
                 }
             }
             
