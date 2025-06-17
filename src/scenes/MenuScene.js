@@ -201,11 +201,17 @@ export default class MenuScene extends Phaser.Scene {
             });
 
             button.on('pointerdown', () => {
+                // Check if player has entered a name
+                if (!this.playerName || this.playerName.trim().length === 0) {
+                    this.showNameRequiredMessage();
+                    return;
+                }
+                
                 this.cameras.main.flash(300, 255, 255, 255, 0.3);
                 this.time.delayedCall(200, () => {
                     this.scene.start('RaceScene', { 
                         strokeType: stroke.key,
-                        playerName: this.playerName.trim() || 'Anonymous'
+                        playerName: this.playerName.trim()
                     });
                 });
             });
@@ -352,6 +358,35 @@ export default class MenuScene extends Phaser.Scene {
             this.nameText.setText('Enter your name...');
             this.nameText.setFill('#888888');
         }
+    }
+
+    showNameRequiredMessage() {
+        // Flash the name input to indicate it's required
+        this.tweens.add({
+            targets: this.nameInputBg,
+            fillColor: 0xff3333,
+            duration: 200,
+            yoyo: true,
+            repeat: 2,
+            onComplete: () => {
+                this.nameInputBg.setFillStyle(0x003366);
+            }
+        });
+
+        // Show temporary message
+        const message = this.add.text(this.cameras.main.width / 2, 280, 'Please enter your name first!', {
+            font: 'bold 16px Arial',
+            fill: '#ff6666',
+            backgroundColor: '#000000',
+            padding: { x: 10, y: 5 }
+        }).setOrigin(0.5);
+
+        // Auto-remove message after 2 seconds
+        this.time.delayedCall(2000, () => {
+            if (message && message.destroy) {
+                message.destroy();
+            }
+        });
     }
 
     createSubtleAnimations() {

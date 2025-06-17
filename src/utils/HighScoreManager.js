@@ -66,16 +66,38 @@ export class HighScoreManager {
             this.scores[strokeType] = [];
         }
 
+        const trimmedName = playerName.substring(0, 12); // Limit to 12 characters
+        
+        // Check if this player already has a score for this stroke type
+        const existingScoreIndex = this.scores[strokeType].findIndex(score => 
+            score.name.toLowerCase() === trimmedName.toLowerCase()
+        );
+
         const newScore = {
-            name: playerName.substring(0, 12), // Limit to 12 characters
+            name: trimmedName,
             time: time,
             place: place,
             date: new Date().toLocaleDateString(),
             timestamp: Date.now()
         };
 
-        // Add the new score
-        this.scores[strokeType].push(newScore);
+        if (existingScoreIndex !== -1) {
+            // Player already has a score - only replace if new time is better (faster)
+            const existingScore = this.scores[strokeType][existingScoreIndex];
+            if (time < existingScore.time) {
+                console.log(`Updating existing score for ${trimmedName}: ${existingScore.time}s -> ${time}s`);
+                this.scores[strokeType][existingScoreIndex] = newScore;
+            } else {
+                console.log(`New time ${time}s is not better than existing ${existingScore.time}s for ${trimmedName}`);
+                // Return the existing position since we didn't update
+                return this.scores[strokeType].findIndex(score => 
+                    score.name.toLowerCase() === trimmedName.toLowerCase()
+                ) + 1;
+            }
+        } else {
+            // New player - add the score
+            this.scores[strokeType].push(newScore);
+        }
         
         // Sort by time (ascending - faster times first)
         this.scores[strokeType].sort((a, b) => a.time - b.time);
@@ -87,9 +109,9 @@ export class HighScoreManager {
 
         this.saveScores();
         
-        // Return the position of the new score (1-based)
+        // Return the position of the player's score (1-based)
         const position = this.scores[strokeType].findIndex(score => 
-            score.timestamp === newScore.timestamp
+            score.name.toLowerCase() === trimmedName.toLowerCase()
         ) + 1;
         
         return position;

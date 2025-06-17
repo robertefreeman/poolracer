@@ -33,9 +33,6 @@ export default class HighScoreScene extends Phaser.Scene {
         // Back button
         this.createBackButton();
 
-        // Clear scores button (for testing)
-        this.createClearButton();
-
         // Input handling
         this.input.keyboard.on('keydown-ESC', () => {
             this.scene.start('MenuScene');
@@ -197,50 +194,4 @@ export default class HighScoreScene extends Phaser.Scene {
         });
     }
 
-    createClearButton() {
-        const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
-
-        const clearButton = this.add.rectangle(width - 100, height - 50, 120, 40, 0xcc3333);
-        clearButton.setStrokeStyle(2, 0xff6666);
-
-        const clearText = this.add.text(width - 100, height - 50, 'CLEAR', {
-            font: '14px Arial',
-            fill: '#ffffff'
-        }).setOrigin(0.5);
-
-        const clearInteractive = this.add.rectangle(width - 100, height - 50, 120, 40, 0x000000, 0)
-            .setInteractive();
-
-        clearInteractive.on('pointerdown', () => {
-            // Confirm before clearing
-            const confirmText = this.add.text(width / 2, height / 2, 
-                'Clear all high scores for ' + this.selectedStroke + '?\nClick again to confirm', {
-                font: '18px Arial',
-                fill: '#ff6666',
-                align: 'center',
-                backgroundColor: '#000000',
-                padding: { x: 20, y: 10 }
-            }).setOrigin(0.5);
-
-            this.time.delayedCall(3000, () => {
-                if (confirmText) confirmText.destroy();
-            });
-
-            // Second click confirms
-            clearInteractive.removeAllListeners();
-            clearInteractive.on('pointerdown', () => {
-                highScoreManager.clearStrokeScores(this.selectedStroke);
-                this.scene.restart({ selectedStroke: this.selectedStroke });
-            });
-        });
-
-        clearInteractive.on('pointerover', () => {
-            clearButton.setFillStyle(0xdd4444);
-        });
-
-        clearInteractive.on('pointerout', () => {
-            clearButton.setFillStyle(0xcc3333);
-        });
-    }
 }
