@@ -48,7 +48,7 @@ export default class Swimmer {
         this.totalTapCount = 0; // Track total taps for accuracy calculation
         
         // AI properties
-        this.aiSkill = isPlayer ? 1.0 : Phaser.Math.FloatBetween(0.8, 1.2); // Increased from 0.8-1.0 to 0.8-1.2 to make AI even faster
+        this.aiSkill = isPlayer ? 1.0 : Phaser.Math.FloatBetween(0.9, 1.3); // AI skill range 90-130% for competitive racing
         this.aiRhythmTimer = 0;
         this.aiStrokeInterval = Phaser.Math.FloatBetween(0.8, 1.2);
         
@@ -132,8 +132,8 @@ export default class Swimmer {
                 this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier * this.diveBonus * this.speedPenaltyMultiplier;
             }
         } else {
-            // AI uses old rhythm system
-            this.speed = this.baseSpeed * (this.aiSkill || 1.0);
+            // AI uses enhanced speed system - average 100 pixels/sec
+            this.speed = 100 * (this.aiSkill || 1.0);
         }
     }
     
