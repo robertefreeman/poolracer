@@ -7,12 +7,11 @@ import MenuScene from './scenes/MenuScene.js';
 import RaceScene from './scenes/RaceScene.js';
 import ResultsScene from './scenes/ResultsScene.js';
 import HighScoreScene from './scenes/HighScoreScene.js';
-import NameEntryScene from './scenes/NameEntryScene.js';
 
 // Configure Phaser game
 const config = {
     ...gameConfig,
-    scene: [PreloadScene, OrientationScene, MenuScene, RaceScene, ResultsScene, HighScoreScene, NameEntryScene],
+    scene: [PreloadScene, OrientationScene, MenuScene, RaceScene, ResultsScene, HighScoreScene],
     parent: 'game-container'
 };
 
