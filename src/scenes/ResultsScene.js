@@ -12,32 +12,78 @@ export default class ResultsScene extends Phaser.Scene {
     }
 
     create() {
+        console.log('=== RESULTS SCENE STARTING ===');
+        console.log('Results data:', this.results);
+        console.log('Stroke type:', this.strokeType);
+        
+        try {
+            const width = this.cameras.main.width;
+            const height = this.cameras.main.height;
+
+            // Background
+            this.add.rectangle(width / 2, height / 2, width, height, 0x001133);
+
+            // Validate results data
+            if (!this.results || this.results.length === 0) {
+                console.error('No results data available!');
+                this.createErrorUI();
+                return;
+            }
+
+            // Sort results by place
+            this.results.sort((a, b) => a.place - b.place);
+
+            // Initialize state
+            this.isHighScore = false;
+            this.nameEntryMode = false;
+            this.playerName = '';
+            this.maxNameLength = 12;
+
+            // Check for high scores and set mode
+            this.checkForHighScores();
+
+            // Create UI based on mode
+            if (this.isHighScore && !this.nameEntryMode) {
+                console.log('Creating high score UI');
+                this.createHighScoreUI();
+            } else if (this.nameEntryMode) {
+                console.log('Creating name entry UI');
+                this.createNameEntryUI();
+            } else {
+                console.log('Creating normal results UI');
+                this.createNormalResultsUI();
+            }
+            
+            console.log('Results scene created successfully');
+        } catch (error) {
+            console.error('Error creating results scene:', error);
+            this.createErrorUI();
+        }
+    }
+
+    createErrorUI() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        // Background
-        this.add.rectangle(width / 2, height / 2, width, height, 0x001133);
+        this.add.text(width / 2, height / 2 - 50, 'Error Loading Results', {
+            font: 'bold 32px Arial',
+            fill: '#ff0000'
+        }).setOrigin(0.5);
 
-        // Sort results by place
-        this.results.sort((a, b) => a.place - b.place);
+        this.add.text(width / 2, height / 2, 'Something went wrong. Returning to menu...', {
+            font: '18px Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
 
-        // Initialize state
-        this.isHighScore = false;
-        this.nameEntryMode = false;
-        this.playerName = '';
-        this.maxNameLength = 12;
+        // Auto return to menu after 3 seconds
+        this.time.delayedCall(3000, () => {
+            this.scene.start('MenuScene');
+        });
 
-        // Check for high scores and set mode
-        this.checkForHighScores();
-
-        // Create UI based on mode
-        if (this.isHighScore && !this.nameEntryMode) {
-            this.createHighScoreUI();
-        } else if (this.nameEntryMode) {
-            this.createNameEntryUI();
-        } else {
-            this.createNormalResultsUI();
-        }
+        // Also allow manual return
+        this.input.on('pointerdown', () => {
+            this.scene.start('MenuScene');
+        });
     }
 
     displayResults() {
@@ -323,7 +369,7 @@ export default class ResultsScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Race details
-        this.add.text(width / 2, 140, `${this.strokeType.toUpperCase()} - ${highScoreManager.constructor.formatTime(this.playerResult.time)}`, {
+        this.add.text(width / 2, 140, `${this.strokeType.toUpperCase()} - ${this.playerResult.time.toFixed(2)}s`, {
             font: 'bold 24px Arial',
             fill: '#ffffff',
             stroke: '#000000',
@@ -331,7 +377,8 @@ export default class ResultsScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         if (this.playerResult.place) {
-            this.add.text(width / 2, 170, `Finished ${highScoreManager.constructor.getRankSuffix(this.playerResult.place)} Place`, {
+            const placeSuffix = this.getPlaceText(this.playerResult.place);
+            this.add.text(width / 2, 170, `Finished ${placeSuffix} Place`, {
                 font: '18px Arial',
                 fill: '#ffff00'
             }).setOrigin(0.5);
@@ -378,7 +425,7 @@ export default class ResultsScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Time display
-        this.add.text(width / 2, 140, `${this.strokeType.toUpperCase()} - ${highScoreManager.constructor.formatTime(this.playerResult.time)}`, {
+        this.add.text(width / 2, 140, `${this.strokeType.toUpperCase()} - ${this.playerResult.time.toFixed(2)}s`, {
             font: '20px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
