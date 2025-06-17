@@ -56,28 +56,79 @@ export default class Swimmer {
     }
     
     createVisuals() {
-        // Create swimmer body (rectangle)
-        this.body = this.scene.add.rectangle(this.x, this.y, 24, 12, this.isPlayer ? 0xff6b35 : 0x4a90e2);
+        // Determine team colors based on lane
+        // RH Seahawks: lanes 1,3,5 (indices 0,2,4) - blue swimsuits
+        // Ravensworth Ravens: lanes 2,4,6 (indices 1,3,5) - navy swimsuits
+        const isSeahawks = this.lane % 2 === 0; // Even lane indices (0,2,4) are Seahawks
         
-        // Create swimmer head (circle) - position based on stroke type
-        const headX = this.strokeType === 'backstroke' ? this.x + 8 : this.x - 8; // Head at back for backstroke
-        this.head = this.scene.add.circle(headX, this.y, 6, this.isPlayer ? 0xffb366 : 0x7bb3f0);
-        
-        // Create arms (small rectangles) - position based on stroke type
-        const armX = this.strokeType === 'backstroke' ? this.x + 4 : this.x - 4; // Arms at back for backstroke
-        this.leftArm = this.scene.add.rectangle(armX, this.y - 8, 8, 4, this.isPlayer ? 0xffb366 : 0x7bb3f0);
-        this.rightArm = this.scene.add.rectangle(armX, this.y + 8, 8, 4, this.isPlayer ? 0xffb366 : 0x7bb3f0);
-        
-        // For backstroke, flip the body orientation and change head color to show face up
-        if (this.strokeType === 'backstroke') {
-            this.body.setRotation(Math.PI); // Flip body 180 degrees
-            this.head.setFillStyle(this.isPlayer ? 0xffcc99 : 0x99ccff); // Lighter color for face up
+        // Color scheme
+        let skinColor, swimsuitColor, teamName;
+        if (this.isPlayer) {
+            skinColor = 0xffdbac; // Skin tone
+            swimsuitColor = 0x0066cc; // Blue swimsuit
+            teamName = 'RH Seahawks';
+        } else if (isSeahawks) {
+            skinColor = 0xffdbac; // Skin tone
+            swimsuitColor = 0x0066cc; // Blue swimsuit  
+            teamName = 'RH Seahawks';
+        } else {
+            skinColor = 0xffdbac; // Skin tone
+            swimsuitColor = 0x1a1a4d; // Navy blue swimsuit
+            teamName = 'Ravensworth Ravens';
         }
         
-        // For butterfly, ensure head is at front (no special positioning needed, default is correct)
+        // All swimmers face toward finish line (right side)
+        // Head position based on stroke type
+        let headX, bodyX, armX, legX;
+        
+        if (this.strokeType === 'backstroke') {
+            // Backstroke: swimmer on back, head toward start, feet toward finish
+            headX = this.x - 12; // Head toward start (left)
+            bodyX = this.x;
+            armX = this.x - 6;
+            legX = this.x + 8; // Legs toward finish (right)
+        } else {
+            // All other strokes: head toward finish, standard forward position
+            headX = this.x + 12; // Head toward finish (right)
+            bodyX = this.x;
+            armX = this.x + 6;
+            legX = this.x - 8; // Legs toward start (left)
+        }
+        
+        // Create swimmer body (torso in swimsuit)
+        this.body = this.scene.add.rectangle(bodyX, this.y, 20, 10, swimsuitColor);
+        
+        // Create swimmer head (skin tone)
+        this.head = this.scene.add.circle(headX, this.y, 5, skinColor);
+        
+        // Create arms (skin tone)
+        this.leftArm = this.scene.add.rectangle(armX, this.y - 7, 8, 3, skinColor);
+        this.rightArm = this.scene.add.rectangle(armX, this.y + 7, 8, 3, skinColor);
+        
+        // Create legs (skin tone) - NEW!
+        this.leftLeg = this.scene.add.rectangle(legX, this.y - 4, 12, 3, skinColor);
+        this.rightLeg = this.scene.add.rectangle(legX, this.y + 4, 12, 3, skinColor);
+        
+        // Create feet (small skin tone circles) - NEW!
+        const feetX = this.strokeType === 'backstroke' ? legX + 8 : legX - 8;
+        this.leftFoot = this.scene.add.circle(feetX, this.y - 4, 2, skinColor);
+        this.rightFoot = this.scene.add.circle(feetX, this.y + 4, 2, skinColor);
+        
+        // Special styling for backstroke (face up)
+        if (this.strokeType === 'backstroke') {
+            this.head.setFillStyle(0xffeedd); // Lighter skin tone for face up
+            this.body.setRotation(0); // Keep body normal for backstroke
+        }
         
         // Group all parts
-        this.sprite = this.scene.add.group([this.body, this.head, this.leftArm, this.rightArm]);
+        this.sprite = this.scene.add.group([
+            this.body, this.head, this.leftArm, this.rightArm, 
+            this.leftLeg, this.rightLeg, this.leftFoot, this.rightFoot
+        ]);
+        
+        // Store team info for debugging
+        this.teamName = teamName;
+        this.swimsuitColor = swimsuitColor;
         
         // Animation state
         this.animFrame = 0;
@@ -184,6 +235,7 @@ export default class Swimmer {
             const bobOffset = Math.sin(time * 0.008) * 2;
             this.body.y = this.y + bobOffset;
             this.head.y = this.y + bobOffset;
+            // Don't bob arms and legs as they have their own stroke animations
         }
     }
     
@@ -196,17 +248,26 @@ export default class Swimmer {
                 const freestylePhase = Math.sin(this.animFrame * Math.PI / 4);
                 const armReach = freestylePhase * (4 + intensity);
                 
-                // Alternating arm movements
-                this.leftArm.y = this.y - 8 + armReach;
-                this.rightArm.y = this.y + 8 - armReach;
+                // Alternating arm movements (arms positioned correctly for forward-facing)
+                this.leftArm.y = this.y - 7 + armReach;
+                this.rightArm.y = this.y + 7 - armReach;
                 
-                // Arms extend forward during reach phase
-                this.leftArm.x = this.x - 4 + Math.max(0, freestylePhase) * 3;
-                this.rightArm.x = this.x - 4 + Math.max(0, -freestylePhase) * 3;
+                // Arms extend forward during reach phase (toward finish line)
+                this.leftArm.x = this.x + 6 + Math.max(0, freestylePhase) * 4;
+                this.rightArm.x = this.x + 6 + Math.max(0, -freestylePhase) * 4;
                 
                 // Enhanced arm rotation for stroke motion
                 this.leftArm.rotation = freestylePhase * 0.4;
                 this.rightArm.rotation = -freestylePhase * 0.4;
+                
+                // Flutter kick - alternating leg movements
+                const legKick = Math.sin(this.animFrame * Math.PI / 2) * (2 + intensity);
+                this.leftLeg.y = this.y - 4 + legKick;
+                this.rightLeg.y = this.y + 4 - legKick;
+                
+                // Feet follow legs with slight delay
+                this.leftFoot.y = this.y - 4 + legKick * 0.8;
+                this.rightFoot.y = this.y + 4 - legKick * 0.8;
                 
                 // Slight body roll for freestyle
                 this.body.rotation = freestylePhase * 0.05;
@@ -214,17 +275,31 @@ export default class Swimmer {
                 
             case 'backstroke':
                 // Backward alternating strokes - arms reach back over head
-                const backstrokeOffset = Math.cos(this.animFrame * Math.PI / 4) * (6 + intensity);
-                this.leftArm.y = this.y - 8 + backstrokeOffset;
-                this.rightArm.y = this.y + 8 - backstrokeOffset;
+                const backstrokePhase = Math.cos(this.animFrame * Math.PI / 4);
+                const backstrokeOffset = backstrokePhase * (6 + intensity);
+                
+                this.leftArm.y = this.y - 7 + backstrokeOffset;
+                this.rightArm.y = this.y + 7 - backstrokeOffset;
+                
                 // Arms rotate more dramatically for backstroke windmill motion
-                this.leftArm.rotation = Math.cos(this.animFrame * Math.PI / 4) * 0.6;
-                this.rightArm.rotation = -Math.cos(this.animFrame * Math.PI / 4) * 0.6;
-                // Arms extend further back for backstroke
-                this.leftArm.x = this.x + 4 + Math.sin(this.animFrame * Math.PI / 4) * 3;
-                this.rightArm.x = this.x + 4 + Math.sin(this.animFrame * Math.PI / 4) * 3;
+                this.leftArm.rotation = backstrokePhase * 0.6;
+                this.rightArm.rotation = -backstrokePhase * 0.6;
+                
+                // Arms extend back over head for backstroke
+                this.leftArm.x = this.x - 6 - Math.abs(backstrokePhase) * 4;
+                this.rightArm.x = this.x - 6 - Math.abs(backstrokePhase) * 4;
+                
+                // Flutter kick for backstroke (similar to freestyle but on back)
+                const backKick = Math.sin(this.animFrame * Math.PI / 2) * (2 + intensity);
+                this.leftLeg.y = this.y - 4 + backKick;
+                this.rightLeg.y = this.y + 4 - backKick;
+                
+                // Feet follow legs
+                this.leftFoot.y = this.y - 4 + backKick * 0.8;
+                this.rightFoot.y = this.y + 4 - backKick * 0.8;
+                
                 // Keep swimmer face up color
-                this.head.setFillStyle(this.isPlayer ? 0xffcc99 : 0x99ccff);
+                this.head.setFillStyle(0xffeedd);
                 break;
                 
             case 'breaststroke':
@@ -233,12 +308,12 @@ export default class Swimmer {
                 const armSweep = Math.abs(breastPhase) * 8; // Arms sweep wider
                 
                 // Arms move out and in synchronously
-                this.leftArm.y = this.y - 8 - armSweep;
-                this.rightArm.y = this.y + 8 + armSweep;
+                this.leftArm.y = this.y - 7 - armSweep;
+                this.rightArm.y = this.y + 7 + armSweep;
                 
                 // Arms extend forward and pull back
-                this.leftArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 3) * 4;
-                this.rightArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 3) * 4;
+                this.leftArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 3) * 4;
+                this.rightArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 3) * 4;
                 
                 // Arms get wider during sweep
                 this.leftArm.width = 8 + armSweep * 0.5;
@@ -248,22 +323,39 @@ export default class Swimmer {
                 this.leftArm.rotation = breastPhase * 0.3;
                 this.rightArm.rotation = -breastPhase * 0.3;
                 
+                // Breaststroke kick - legs come together and kick out
+                const breastKick = Math.sin(this.animFrame * Math.PI / 3);
+                const legSeparation = Math.abs(breastKick) * 3;
+                
+                this.leftLeg.y = this.y - 4 - legSeparation;
+                this.rightLeg.y = this.y + 4 + legSeparation;
+                
+                // Legs extend back during kick
+                this.leftLeg.x = this.x - 8 - Math.max(0, breastKick) * 3;
+                this.rightLeg.x = this.x - 8 - Math.max(0, breastKick) * 3;
+                
+                // Feet angle outward during kick
+                this.leftFoot.y = this.y - 4 - legSeparation * 1.2;
+                this.rightFoot.y = this.y + 4 + legSeparation * 1.2;
+                this.leftFoot.x = this.x - 16 - Math.max(0, breastKick) * 2;
+                this.rightFoot.x = this.x - 16 - Math.max(0, breastKick) * 2;
+                
                 // Body undulation for breaststroke
                 this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 3) * 0.15;
                 break;
                 
             case 'butterfly':
-                // Synchronized butterfly strokes - dramatic dolphin motion (head-first)
+                // Synchronized butterfly strokes - dramatic dolphin motion
                 const butterflyPhase = Math.sin(this.animFrame * Math.PI / 2.5) * (1 + intensity * 0.3);
                 const wingSpan = Math.abs(butterflyPhase) * 6;
                 
                 // Both arms move together in butterfly motion
-                this.leftArm.y = this.y - 8 + butterflyPhase * 4;
-                this.rightArm.y = this.y + 8 + butterflyPhase * 4;
+                this.leftArm.y = this.y - 7 + butterflyPhase * 4;
+                this.rightArm.y = this.y + 7 + butterflyPhase * 4;
                 
-                // Arms sweep forward and back together (corrected direction for head-first)
-                this.leftArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
-                this.rightArm.x = this.x - 4 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
+                // Arms sweep forward and back together
+                this.leftArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
+                this.rightArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
                 
                 // Dramatic arm rotation for butterfly stroke
                 this.leftArm.rotation = butterflyPhase * 0.7;
@@ -273,12 +365,28 @@ export default class Swimmer {
                 this.leftArm.width = 8 + wingSpan * 0.3;
                 this.rightArm.width = 8 + wingSpan * 0.3;
                 
+                // Dolphin kick - both legs move together in wave motion
+                const dolphinKick = Math.sin(this.animFrame * Math.PI / 2.5) * (3 + intensity);
+                
+                this.leftLeg.y = this.y - 4 + dolphinKick;
+                this.rightLeg.y = this.y + 4 + dolphinKick;
+                
+                // Legs undulate with body wave
+                this.leftLeg.x = this.x - 8 + Math.sin(this.animFrame * Math.PI / 2.5) * 2;
+                this.rightLeg.x = this.x - 8 + Math.sin(this.animFrame * Math.PI / 2.5) * 2;
+                
+                // Feet follow the dolphin wave motion
+                this.leftFoot.y = this.y - 4 + dolphinKick * 1.3;
+                this.rightFoot.y = this.y + 4 + dolphinKick * 1.3;
+                this.leftFoot.x = this.x - 16 + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
+                this.rightFoot.x = this.x - 16 + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
+                
                 // Enhanced body undulation - dolphin kick motion
                 this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 2.5) * 0.25;
                 this.body.rotation = Math.sin(this.animFrame * Math.PI / 2.5) * 0.1; // Body waves
                 
                 // Head bobs with dolphin motion (ensure head stays at front)
-                this.head.x = this.x - 8; // Keep head at front
+                this.head.x = this.x + 12; // Keep head at front
                 this.head.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
                 break;
         }
@@ -340,6 +448,14 @@ export default class Swimmer {
         this.leftArm.y += deltaY;
         this.rightArm.x += deltaX;
         this.rightArm.y += deltaY;
+        this.leftLeg.x += deltaX;
+        this.leftLeg.y += deltaY;
+        this.rightLeg.x += deltaX;
+        this.rightLeg.y += deltaY;
+        this.leftFoot.x += deltaX;
+        this.leftFoot.y += deltaY;
+        this.rightFoot.x += deltaX;
+        this.rightFoot.y += deltaY;
     }
     
     // Option B: Update click frequency tracking
@@ -700,7 +816,17 @@ export default class Swimmer {
         });
         this.waterTrail = [];
         
-        // Destroy main sprite
-        this.sprite.destroy();
+        // Destroy individual components
+        if (this.body) this.body.destroy();
+        if (this.head) this.head.destroy();
+        if (this.leftArm) this.leftArm.destroy();
+        if (this.rightArm) this.rightArm.destroy();
+        if (this.leftLeg) this.leftLeg.destroy();
+        if (this.rightLeg) this.rightLeg.destroy();
+        if (this.leftFoot) this.leftFoot.destroy();
+        if (this.rightFoot) this.rightFoot.destroy();
+        
+        // Destroy main sprite group
+        if (this.sprite) this.sprite.destroy();
     }
 }
