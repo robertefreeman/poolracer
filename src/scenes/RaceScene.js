@@ -335,8 +335,8 @@ export default class RaceScene extends Phaser.Scene {
             // If player hasn't dived by now, force them to dive to prevent infinite race
             const player = this.swimmers[raceConfig.playerLane];
             if (player && !player.hasDived) {
-                player.dive(this.time.now, { multiplier: 0.8, type: 'late' });
-                this.showDiveTimingFeedback({ multiplier: 0.8, type: 'late' });
+                player.dive(this.time.now, { multiplier: 1.0, type: 'late' });
+                this.showDiveTimingFeedback({ multiplier: 1.0, type: 'late' });
             }
         });
     }
@@ -642,9 +642,9 @@ export default class RaceScene extends Phaser.Scene {
         else if (timeSinceRaceStart <= 1000) {
             return { multiplier: 1.0, type: 'normal' };
         }
-        // Late start: after 1000ms (shouldn't happen as canDive becomes false)
+        // Late start: after 1000ms (shouldn't happen as canDive becomes false) - no penalty
         else {
-            return { multiplier: 0.9, type: 'late' };
+            return { multiplier: 1.0, type: 'late' };
         }
     }
     

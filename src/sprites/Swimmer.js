@@ -598,8 +598,8 @@ export default class Swimmer {
             // Mark that player has dived and can now swim
             this.hasDived = true;
             
-            // Calculate initial momentum with timing bonus (reduced base)
-            let baseMomentum = 50; // Further reduced from 60 to slow initial start
+            // Calculate initial momentum with timing bonus (slightly increased base)
+            let baseMomentum = 55; // Slightly increased from 50 to give better start momentum
             if (diveTimingBonus) {
                 baseMomentum = baseMomentum * diveTimingBonus.multiplier;
                 // Store the dive bonus for continued momentum advantage
