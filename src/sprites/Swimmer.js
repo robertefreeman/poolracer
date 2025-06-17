@@ -55,6 +55,22 @@ export default class Swimmer {
         this.createVisuals();
     }
     
+    // Get stroke-specific speed multiplier based on real swimming times
+    getStrokeSpeedMultiplier() {
+        switch (this.strokeType) {
+            case 'freestyle':
+                return 1.0; // Baseline speed (fastest stroke)
+            case 'butterfly':
+                return 0.9; // 10% slower than freestyle
+            case 'breaststroke':
+                return 0.8; // 20% slower than freestyle
+            case 'backstroke':
+                return 0.7; // 30% slower than freestyle
+            default:
+                return 1.0;
+        }
+    }
+    
     createVisuals() {
         // Determine team colors based on lane
         // RH Seahawks: lanes 1,3,5 (indices 0,2,4) - blue swimsuits
@@ -189,12 +205,14 @@ export default class Swimmer {
                     }
                 }
                 
-                // Calculate speed with all multipliers including miss tap penalty
-                this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier * this.diveBonus * this.speedPenaltyMultiplier;
+                // Calculate speed with all multipliers including stroke-specific speed and miss tap penalty
+                const strokeMultiplier = this.getStrokeSpeedMultiplier();
+                this.speed = this.momentum * this.frequencySpeedMultiplier * this.clickRateMultiplier * this.diveBonus * this.speedPenaltyMultiplier * strokeMultiplier;
             }
         } else {
-            // AI uses enhanced speed system - average 100 pixels/sec
-            this.speed = 100 * (this.aiSkill || 1.0);
+            // AI uses enhanced speed system - average 100 pixels/sec with stroke-specific adjustments
+            const strokeMultiplier = this.getStrokeSpeedMultiplier();
+            this.speed = 100 * (this.aiSkill || 1.0) * strokeMultiplier;
         }
     }
     
