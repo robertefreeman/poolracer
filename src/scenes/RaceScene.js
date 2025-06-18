@@ -171,7 +171,7 @@ export default class RaceScene extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
         const config = this.portraitConfig;
-        const laneWidth = config.laneWidth;
+        // const laneWidth = config.laneWidth;
         
         // Enhanced pool background with gradient
         const poolGradient = this.add.rectangle(width / 2, height / 2, width, height, 0x0066cc);
@@ -321,6 +321,9 @@ export default class RaceScene extends Phaser.Scene {
     }
     
     createUI() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
         // Timer
         this.timerText = this.add.text(10, 10, 'Time: 0.00', {
             font: '18px Arial',
