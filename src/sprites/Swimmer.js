@@ -14,8 +14,8 @@ export default class Swimmer {
         this.speed = 0;
         this.baseSpeed = 70; // Further reduced from 80 to slow down player
         this.momentum = 0; // Current forward momentum
-        this.maxMomentum = 130; // Further reduced from 150 to cap maximum speed
-        this.momentumDecay = 40; // Increased from 30 for faster momentum loss
+        this.maxMomentum = 33; // Further reduced from 150 to cap maximum speed
+        this.momentumDecay = 10; // Increased from 30 for faster momentum loss
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
         this.hasStartedSwimming = false;
@@ -268,7 +268,7 @@ export default class Swimmer {
         } else {
             // AI uses enhanced speed system - average 100 pixels/sec with stroke-specific adjustments
             const strokeMultiplier = this.getStrokeSpeedMultiplier();
-            this.speed = 100 * (this.aiSkill || 1.0) * strokeMultiplier;
+            this.speed = 25 * (this.aiSkill || 1.0) * strokeMultiplier;
         }
     }
     
@@ -656,16 +656,16 @@ export default class Swimmer {
         if (keyPressed === this.expectedNextKey) {
             // Correct alternation - add momentum
             wasCorrectKey = true;
-            momentumGain = 30; // Reduced from 40 to slow progression
+            momentumGain = 8; // Reduced from 40 to slow progression
             
             // Timing bonus for good rhythm (250-700ms for tighter timing window)
             if (this.strokeCount > 1) {
                 if (timeSinceLastStroke >= 250 && timeSinceLastStroke <= 700) {
-                    momentumGain += 5; // Reduced bonus from 10 to 5
+                    momentumGain += 2; // Reduced bonus from 10 to 5
                 } else if (timeSinceLastStroke < 250) {
-                    momentumGain += 2; // Reduced bonus from 3 to 2
+                    momentumGain += 1; // Reduced bonus from 3 to 2
                 } else if (timeSinceLastStroke > 1000) {
-                    momentumGain -= 20; // Keep penalty the same
+                    momentumGain -= 5; // Keep penalty the same
                 }
             }
             
@@ -677,7 +677,7 @@ export default class Swimmer {
             // Wrong key - MASSIVE PENALTY for miss tapping
             wasCorrectKey = false;
             this.missTapCount++; // Track miss taps
-            this.momentum = Math.max(0, this.momentum - 80); // Increased penalty from 60 to 80
+            this.momentum = Math.max(0, this.momentum - 20); // Increased penalty from 60 to 80
             
             // Additional speed penalty that persists
             this.speedPenaltyTimer = 2000; // 2 second speed penalty
@@ -824,7 +824,7 @@ export default class Swimmer {
             this.hasDived = true;
             
             // Calculate initial momentum with timing bonus (slightly increased base)
-            let baseMomentum = 55; // Slightly increased from 50 to give better start momentum
+            let baseMomentum = 14; // Slightly increased from 50 to give better start momentum
             if (diveTimingBonus) {
                 baseMomentum = baseMomentum * diveTimingBonus.multiplier;
                 // Store the dive bonus for continued momentum advantage
