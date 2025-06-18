@@ -321,6 +321,9 @@ export default class RaceScene extends Phaser.Scene {
     }
     
     createUI() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
         // Timer
         this.timerText = this.add.text(10, 10, 'Time: 0.00', {
             font: '18px Arial',
