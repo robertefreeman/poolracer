@@ -86,14 +86,20 @@ export default class ResultsScene extends Phaser.Scene {
 
         // Center the table - calculate positions relative to center
         const centerX = width / 2;
-        const placeX = centerX - 200;
-        const teamX = centerX - 80;
-        const timeX = centerX + 40;
-        const strokesX = centerX + 140;
-        const statsX = centerX + 240;
+        const placeX = centerX - 280; // New
+        const nameX = centerX - 170;  // New (for Name column)
+        const teamX = centerX - 60;   // New (for Team column)
+        const timeX = centerX + 50;   // New
+        const strokesX = centerX + 150; // New
+        const statsX = centerX + 250;  // New
 
         // Create table headers
         this.add.text(placeX, startY - 5, 'Place', {
+            font: 'bold 14px Arial',
+            fill: '#aaaaaa'
+        }).setOrigin(0.5);
+
+        this.add.text(nameX, startY - 5, 'Name', {
             font: 'bold 14px Arial',
             fill: '#aaaaaa'
         }).setOrigin(0.5);
@@ -139,9 +145,25 @@ export default class ResultsScene extends Phaser.Scene {
                 fill: placeColor
             }).setOrigin(0.5);
 
-            // Team (based on lane) - shortened team names
-            const teamName = this.getShortTeamName(result.swimmer.lane);
-            this.add.text(teamX, y, teamName, {
+            // Name display
+            let displayName;
+            let nameColor = isPlayer ? '#ffff00' : '#cccccc'; // Default color
+
+            if (isPlayer) {
+                displayName = this.playerName;
+            } else {
+                // Using result.swimmer.lane, which is 0-indexed. Adding 1 for display.
+                displayName = `Swimmer ${result.swimmer.lane + 1}`;
+            }
+
+            this.add.text(nameX, y, displayName, {
+                font: '16px Arial',
+                fill: nameColor
+            }).setOrigin(0.5);
+
+            // Team display (based on lane)
+            const teamNameStr = this.getShortTeamName(result.swimmer.lane);
+            this.add.text(teamX, y, teamNameStr, {
                 font: '16px Arial',
                 fill: isPlayer ? '#ffff00' : '#cccccc'
             }).setOrigin(0.5);
