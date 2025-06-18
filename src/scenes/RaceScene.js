@@ -13,8 +13,19 @@ export default class RaceScene extends Phaser.Scene {
     }
 
     create() {
+        const raceDistanceMeters = 25; // 25-meter race
+        const pixelsPerMeter = 100;    // Each meter is 100 pixels long
+        this.poolWorldLength = raceDistanceMeters * pixelsPerMeter; // Total scrollable length
+
+        // Make these available to swimmers
+        this.raceDistanceMeters = raceDistanceMeters;
+        this.pixelsPerMeter = pixelsPerMeter;
+
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
+
+        this.physics.world.setBounds(0, 0, width, this.poolWorldLength);
+        this.cameras.main.setBounds(0, 0, width, this.poolWorldLength);
 
         // Mobile detection and layout configuration
         this.isMobile = MobileDetection.isMobile();
@@ -32,6 +43,24 @@ export default class RaceScene extends Phaser.Scene {
         this.swimmers = [];
         this.createSwimmers();
         
+        // Find the player swimmer
+        const playerSwimmer = this.swimmers.find(s => s.isPlayer);
+
+        if (playerSwimmer) {
+            // Make the camera follow the player swimmer
+            // Parameters: target, roundPixels, lerpX, lerpY, offsetX, offsetY
+            // We want smooth follow on Y, no follow on X (camera stays centered horizontally)
+            // offsetY will position the player a bit below the center of the viewport.
+            // For a screen height of, say, 720, an offset of 150-200 might be good.
+            const verticalOffset = height * 0.25; // Player at 1/4 from bottom of screen
+            this.cameras.main.startFollow(playerSwimmer.body, true, 0.1, 0.1, 0, verticalOffset);
+            // Note: Following playerSwimmer.body (a Phaser GameObject) is typical.
+            // If playerSwimmer itself is a Container, you might follow that.
+            // Ensure playerSwimmer.body is the correct main visual part to follow.
+        } else {
+            console.error("Player swimmer not found, camera follow not initiated.");
+        }
+
         // UI elements
         this.createUI();
         
@@ -57,121 +86,41 @@ export default class RaceScene extends Phaser.Scene {
     
     createPool() {
         const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
-        
-        // Adapt pool layout for portrait mode
-        if (this.isPortrait && this.portraitConfig) {
-            this.createPortraitPool();
-            return;
+        // const height = this.cameras.main.height; // Screen height, not pool world length
+
+        // Pool Background
+        this.add.rectangle(width / 2, this.poolWorldLength / 2, width, this.poolWorldLength, 0x0055aa); // Darker blue for depth
+
+        const laneWorldWidth = width * 0.8 / raceConfig.lanes; // Use a portion of screen width
+        const firstLaneX = (width - (laneWorldWidth * raceConfig.lanes)) / 2 + (laneWorldWidth / 2);
+
+        for (let i = 0; i < raceConfig.lanes + 1; i++) { // Draw N+1 lines for N lanes
+            const lineX = (firstLaneX - laneWorldWidth/2) + (i * laneWorldWidth);
+            this.add.line(0, 0, lineX, 0, lineX, this.poolWorldLength, 0xffffff, 0.5).setOrigin(0,0);
         }
-        
-        const laneHeight = height / raceConfig.lanes;
-        
-        // Enhanced pool background with gradient
-        const poolGradient = this.add.rectangle(width / 2, height / 2, width, height, 0x0066cc);
-        
-        // Add subtle water texture with animated circles
-        this.waterEffects = [];
-        for (let i = 0; i < 15; i++) {
-            const bubble = this.add.circle(
-                Phaser.Math.Between(100, width - 100),
-                Phaser.Math.Between(50, height - 50),
-                Phaser.Math.Between(3, 8),
-                0x87ceeb,
-                0.3
-            );
-            
-            this.waterEffects.push(bubble);
-            
-            // Animate water bubbles
-            this.tweens.add({
-                targets: bubble,
-                y: bubble.y - Phaser.Math.Between(20, 40),
-                alpha: 0,
-                duration: Phaser.Math.Between(3000, 6000),
-                repeat: -1,
-                yoyo: true,
-                ease: 'Sine.easeInOut'
-            });
-        }
-        
-        // Enhanced lane dividers with floating effect
-        for (let i = 1; i < raceConfig.lanes; i++) {
-            const y = i * laneHeight;
-            
-            // Lane rope (animated dashed line)
-            for (let x = 0; x < width; x += 20) {
-                const rope = this.add.rectangle(x + 10, y, 10, 2, 0xffffff);
-                
-                // Add gentle floating animation
-                this.tweens.add({
-                    targets: rope,
-                    y: y + Math.sin((x / 100) * Math.PI) * 2,
-                    duration: 2000 + (x * 10),
-                    repeat: -1,
-                    yoyo: true,
-                    ease: 'Sine.easeInOut'
-                });
-            }
-        }
-        
-        // Pool edges with enhanced styling
-        this.add.rectangle(width / 2, 5, width, 10, 0x333333);
-        this.add.rectangle(width / 2, height - 5, width, 10, 0x333333);
-        
-        // Enhanced start and finish lines
-        const startLine = this.add.rectangle(80, height / 2, 4, height, 0x00ff00);
-        const finishLine = this.add.rectangle(1200, height / 2, 4, height, 0xff0000);
-        
-        // Animated start line glow
-        this.tweens.add({
-            targets: startLine,
-            alpha: 0.6,
-            duration: 1000,
-            repeat: -1,
-            yoyo: true,
-            ease: 'Sine.easeInOut'
-        });
-        
-        // Animated finish line glow
-        this.tweens.add({
-            targets: finishLine,
-            alpha: 0.8,
-            scaleX: 1.2,
-            duration: 800,
-            repeat: -1,
-            yoyo: true,
-            ease: 'Sine.easeInOut'
-        });
-        
-        // Distance markers with enhanced styling (25m pool - only show halfway point)
-        // Halfway marker at 12.5m
-        const halfwayX = 80 + (1120 / 2); // 1120 is total pool length in pixels
-        const halfwayMarker = this.add.rectangle(halfwayX, height / 2, 2, height, 0xcccccc);
-        
-        this.add.text(halfwayX - 15, 10, '12.5m', {
+
+        const startLineY = this.poolWorldLength - 50;
+        const finishLineY = 50;
+        this.add.rectangle(width / 2, startLineY, width, 4, 0x00ff00);  // Start line (green)
+        this.add.rectangle(width / 2, finishLineY, width, 4, 0xff0000); // Finish line (red)
+
+        // Halfway marker
+        const halfwayY = this.poolWorldLength / 2;
+        this.add.rectangle(width / 2, halfwayY, width, 2, 0xcccccc);
+        this.add.text(width / 2 + 10, halfwayY, `${this.raceDistanceMeters / 2}m`, {
             font: '12px Arial',
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 1
-        });
-        
-        // Subtle marker animation
-        this.tweens.add({
-            targets: halfwayMarker,
-            alpha: 0.7,
-            duration: 1500,
-            repeat: -1,
-            yoyo: true,
-            ease: 'Sine.easeInOut'
-        });
+        }); // style
     }
     
+    // createPortraitPool() can be removed or kept if it has other uses, but is not called by createPool anymore.
     createPortraitPool() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
         const config = this.portraitConfig;
-        const laneWidth = config.laneWidth;
+        // const laneWidth = config.laneWidth;
         
         // Enhanced pool background with gradient
         const poolGradient = this.add.rectangle(width / 2, height / 2, width, height, 0x0066cc);
@@ -207,13 +156,14 @@ export default class RaceScene extends Phaser.Scene {
             const x = startX + (i * laneWidth);
             
             // Lane rope (vertical dashed line)
-            for (let y = 100; y < height - 200; y += 20) {
-                const rope = this.add.rectangle(x, y + 10, 2, 10, 0xffffff);
+            // This loop should use this.poolWorldLength
+            for (let yPos = 100; yPos < this.poolWorldLength - 100; yPos += 20) { // Example change
+                const rope = this.add.rectangle(x, yPos + 10, 2, 10, 0xffffff);
                 
                 this.tweens.add({
                     targets: rope,
-                    x: x + Math.sin((y / 100) * Math.PI) * 2,
-                    duration: 2000 + (y * 10),
+                    x: x + Math.sin((yPos / 100) * Math.PI) * 2,
+                    duration: 2000 + (yPos * 10),
                     repeat: -1,
                     yoyo: true,
                     ease: 'Sine.easeInOut'
@@ -221,13 +171,16 @@ export default class RaceScene extends Phaser.Scene {
             }
         }
         
-        // Pool edges
-        this.add.rectangle(width / 2, 90, width * 0.9, 10, 0x333333);
-        this.add.rectangle(width / 2, height - 190, width * 0.9, 10, 0x333333);
+        // Pool edges - should use this.poolWorldLength
+        this.add.rectangle(width / 2, 5, width * 0.9, 10, 0x333333); // Top edge
+        this.add.rectangle(width / 2, this.poolWorldLength - 5, width * 0.9, 10, 0x333333); // Bottom edge
         
-        // Start and finish lines (horizontal for portrait)
-        const startLine = this.add.rectangle(width / 2, 100, width * 0.9, 4, 0x00ff00);
-        const finishLine = this.add.rectangle(width / 2, height - 200, width * 0.9, 4, 0xff0000);
+        // Start and finish lines (horizontal for portrait) - should use this.poolWorldLength
+        const newStartLineY = this.poolWorldLength - 50; // Near bottom of world
+        const newFinishLineY = 50; // Near top of world
+
+        const startLine = this.add.rectangle(width / 2, newStartLineY, width * 0.9, 4, 0x00ff00);
+        const finishLine = this.add.rectangle(width / 2, newFinishLineY, width * 0.9, 4, 0xff0000);
         
         // Animated lines
         this.tweens.add({
@@ -249,12 +202,11 @@ export default class RaceScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
         
-        // Halfway marker
-        const poolLength = config && config.poolLength ? config.poolLength : 500;
-        const halfwayY = 100 + (poolLength / 2);
-        const halfwayMarker = this.add.rectangle(width / 2, halfwayY, width * 0.9, 2, 0xcccccc);
+        // Halfway marker - should use this.poolWorldLength
+        const halfwayYPortrait = this.poolWorldLength / 2;
+        const halfwayMarker = this.add.rectangle(width / 2, halfwayYPortrait, width * 0.9, 2, 0xcccccc);
         
-        this.add.text(width / 2, halfwayY - 20, '12.5m', {
+        this.add.text(width / 2, halfwayYPortrait - 20, `${this.raceDistanceMeters / 2}m`, {
             font: '12px Arial',
             fill: '#ffffff',
             stroke: '#000000',
@@ -273,54 +225,33 @@ export default class RaceScene extends Phaser.Scene {
     
     createSwimmers() {
         const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
+        // const height = this.cameras.main.height; // Not directly needed for Y position anymore
         
-        if (this.isPortrait && this.portraitConfig) {
-            // Portrait mode: swimmers in vertical lanes
-            const config = this.portraitConfig;
-            const laneWidth = config && config.laneWidth ? config.laneWidth : width * 0.8 / raceConfig.lanes;
-            const startX = (width - (laneWidth * raceConfig.lanes)) / 2;
+        const laneWorldWidth = width * 0.8 / raceConfig.lanes;
+        const firstLaneX = (width - (laneWorldWidth * raceConfig.lanes)) / 2 + (laneWorldWidth / 2);
+        const swimmerStartY = this.poolWorldLength - 100; // Start swimmers a bit above the absolute bottom start line
+
+        for (let i = 0; i < raceConfig.lanes; i++) {
+            const swimmerX = firstLaneX + (i * laneWorldWidth);
+            const isPlayer = i === raceConfig.playerLane;
             
-            for (let i = 0; i < raceConfig.lanes; i++) {
-                const x = startX + (i + 0.5) * laneWidth;
-                const isPlayer = i === raceConfig.playerLane;
-                
-                const swimmer = new Swimmer(
-                    this,
-                    x,
-                    100, // Start at top
-                    i,
-                    isPlayer,
-                    this.strokeType,
-                    true // Portrait mode flag
-                );
-                
-                this.swimmers.push(swimmer);
-            }
-        } else {
-            // Landscape mode: swimmers in horizontal lanes
-            const laneHeight = height / raceConfig.lanes;
-            
-            for (let i = 0; i < raceConfig.lanes; i++) {
-                const y = (i + 0.5) * laneHeight;
-                const isPlayer = i === raceConfig.playerLane;
-                
-                const swimmer = new Swimmer(
-                    this,
-                    80,
-                    y,
-                    i,
-                    isPlayer,
-                    this.strokeType,
-                    false // Landscape mode
-                );
-                
-                this.swimmers.push(swimmer);
-            }
+            const swimmer = new Swimmer(
+                this, // scene context
+                swimmerX,
+                swimmerStartY,
+                i,      // lane index
+                isPlayer,
+                this.strokeType,
+                true    // isPortraitMode is now always true
+            );
+            this.swimmers.push(swimmer);
         }
     }
     
     createUI() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
         // Timer
         this.timerText = this.add.text(10, 10, 'Time: 0.00', {
             font: '18px Arial',
@@ -328,6 +259,7 @@ export default class RaceScene extends Phaser.Scene {
             backgroundColor: '#000000',
             padding: { x: 10, y: 5 }
         });
+        this.timerText.setScrollFactor(0);
         
         // Stroke type
         this.strokeText = this.add.text(10, 40, `Stroke: ${this.strokeType}`, {
@@ -336,88 +268,106 @@ export default class RaceScene extends Phaser.Scene {
             backgroundColor: '#000000',
             padding: { x: 10, y: 5 }
         });
+        this.strokeText.setScrollFactor(0);
         
         // Momentum meter for player
-        this.momentumMeter = this.add.rectangle(10, 80, 100, 20, 0x333333);
-        this.momentumBar = this.add.rectangle(10, 80, 0, 16, 0x00ff00);
-        this.momentumBar.setOrigin(0, 0.5);
+        let currentY = 70;
+        this.momentumMeter = this.add.rectangle(10, currentY, 100, 20, 0x333333);
+        this.momentumMeter.setScrollFactor(0);
+        this.momentumBar = this.add.rectangle(10, currentY, 0, 16, 0x00ff00);
+        this.momentumBar.setOrigin(0, 0.5).setScrollFactor(0);
         
-        this.add.text(10, 105, 'Momentum', {
+        const momentumLabel = this.add.text(10, currentY + 20, 'Momentum', { // Adjusted Y for label
             font: '12px Arial',
             fill: '#ffffff'
         });
+        momentumLabel.setScrollFactor(0);
+        currentY += 40; // Next group Y
         
         // Click frequency meter
-        this.frequencyMeter = this.add.rectangle(10, 130, 100, 15, 0x333333);
-        this.frequencyBar = this.add.rectangle(10, 130, 0, 11, 0x00ffff);
-        this.frequencyBar.setOrigin(0, 0.5);
+        this.frequencyMeter = this.add.rectangle(10, currentY, 100, 15, 0x333333);
+        this.frequencyMeter.setScrollFactor(0);
+        this.frequencyBar = this.add.rectangle(10, currentY, 0, 11, 0x00ffff);
+        this.frequencyBar.setOrigin(0, 0.5).setScrollFactor(0);
         
-        this.add.text(10, 150, 'Click Frequency', {
+        const frequencyLabel = this.add.text(10, currentY + 15, 'Click Frequency', { // Adjusted Y
             font: '10px Arial',
             fill: '#ffffff'
         });
-        
+        frequencyLabel.setScrollFactor(0);
+        currentY += 35;
+
         // Click rate meter
-        this.rateMeter = this.add.rectangle(10, 170, 100, 15, 0x333333);
-        this.rateBar = this.add.rectangle(10, 170, 50, 11, 0xffff00);
-        this.rateBar.setOrigin(0, 0.5);
+        this.rateMeter = this.add.rectangle(10, currentY, 100, 15, 0x333333);
+        this.rateMeter.setScrollFactor(0);
+        this.rateBar = this.add.rectangle(10, currentY, 50, 11, 0xffff00);
+        this.rateBar.setOrigin(0, 0.5).setScrollFactor(0);
         
-        this.add.text(10, 190, 'Click Rate', {
+        const rateLabel = this.add.text(10, currentY + 15, 'Click Rate', { // Adjusted Y
             font: '10px Arial',
             fill: '#ffffff'
         });
+        rateLabel.setScrollFactor(0);
+        currentY += 35;
         
         // Speed multiplier display
-        this.speedMultiplierText = this.add.text(10, 210, 'Speed: 1.0x', {
+        this.speedMultiplierText = this.add.text(10, currentY, 'Speed: 1.0x', {
             font: '12px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 5, y: 3 }
         });
+        this.speedMultiplierText.setScrollFactor(0);
+        currentY += 25;
         
         // Miss tap counter
-        this.missTapText = this.add.text(10, 235, 'Miss Taps: 0', {
+        this.missTapText = this.add.text(10, currentY, 'Miss Taps: 0', {
             font: '12px Arial',
             fill: '#ff6666',
             backgroundColor: '#000000',
             padding: { x: 5, y: 3 }
         });
+        this.missTapText.setScrollFactor(0);
+        currentY += 25;
         
         // Accuracy display
-        this.accuracyText = this.add.text(10, 260, 'Accuracy: 100%', {
+        this.accuracyText = this.add.text(10, currentY, 'Accuracy: 100%', {
             font: '12px Arial',
             fill: '#66ff66',
             backgroundColor: '#000000',
             padding: { x: 5, y: 3 }
         });
+        this.accuracyText.setScrollFactor(0);
+        currentY += 25;
         
         // Dive bonus display
-        this.diveBonusText = this.add.text(10, 285, 'Dive Bonus: 1.0x', {
+        this.diveBonusText = this.add.text(10, currentY, 'Dive Bonus: 1.0x', {
             font: '12px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 5, y: 3 }
         });
+        this.diveBonusText.setScrollFactor(0);
+        currentY += 25;
         
         // Speed penalty display
-        this.speedPenaltyText = this.add.text(10, 310, 'Penalty: None', {
+        this.speedPenaltyText = this.add.text(10, currentY, 'Penalty: None', {
             font: '12px Arial',
             fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 5, y: 3 }
         });
+        this.speedPenaltyText.setScrollFactor(0);
         
         // Instructions (adapt for mobile and orientation)
-        const instructionText = this.isMobile ? 
+        const instructionTextContent = this.isMobile ?
             'TAP DIVE button, then alternate LEFT/RIGHT buttons to swim!' :
             'SPACEBAR to dive, then alternate LEFT/RIGHT keys to swim!';
         
-        const instructionY = this.isPortrait ? height - 200 : 550;
-        const instructionX = width / 2;
-        const fontSize = this.isPortrait ? '14px' : (this.isMobile ? '16px' : '18px');
+        const instructionFontSize = this.isPortrait ? '14px' : (this.isMobile ? '16px' : '18px');
             
-        this.instructionText = this.add.text(instructionX, instructionY, instructionText, {
-            font: `bold ${fontSize} Arial`,
+        this.instructionText = this.add.text(width / 2, height - 100, instructionTextContent, {
+            font: `bold ${instructionFontSize} Arial`,
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 3,
@@ -426,10 +376,10 @@ export default class RaceScene extends Phaser.Scene {
             align: 'center',
             wordWrap: { width: width * 0.8 }
         }).setOrigin(0.5);
+        this.instructionText.setScrollFactor(0);
 
         // Additional tip - positioned below instructions
-        const tipY = this.isPortrait ? height - 170 : 580;
-        this.add.text(width / 2, tipY, 'Perfect timing = maximum speed!', {
+        const tipText = this.add.text(width / 2, height - 70, 'Perfect timing = maximum speed!', {
             font: 'bold 14px Arial',
             fill: '#ffff00',
             stroke: '#000000',
@@ -437,30 +387,34 @@ export default class RaceScene extends Phaser.Scene {
             backgroundColor: '#000000cc',
             padding: { x: 10, y: 5 }
         }).setOrigin(0.5);
+        tipText.setScrollFactor(0);
         
         // Next key indicator
-        this.nextKeyIndicator = this.add.text(400, 50, '← PRESS LEFT', {
+        this.nextKeyIndicator = this.add.text(width / 2, 30, '← PRESS LEFT', { // Repositioned
             font: 'bold 24px Arial',
             fill: '#00ff00',
             stroke: '#000000',
             strokeThickness: 2
         }).setOrigin(0.5);
+        this.nextKeyIndicator.setScrollFactor(0);
         
         // Dive status indicator
-        this.diveStatusText = this.add.text(10, 130, 'Press SPACEBAR to dive!', {
+        this.diveStatusText = this.add.text(width / 2, 60, 'Press SPACEBAR to dive!', { // Repositioned
             font: '14px Arial',
             fill: '#ffff00',
             backgroundColor: '#000000',
             padding: { x: 5, y: 3 }
-        });
+        }).setOrigin(0.5); // Centered origin
+        this.diveStatusText.setScrollFactor(0);
         
         // Countdown text
-        this.countdownText = this.add.text(400, 300, '', {
+        this.countdownText = this.add.text(width / 2, height / 2, '', { // Screen centered
             font: 'bold 48px Arial',
             fill: '#ffff00',
             stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5);
+        this.countdownText.setScrollFactor(0);
     }
     
     startCountdown() {

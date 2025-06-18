@@ -19,10 +19,10 @@ export default class MenuScene extends Phaser.Scene {
         this.createCleanBackground();
 
         // Main title - larger and more prominent
-        this.createMainTitle();
+    this.createMainTitle();
 
         // Create player name input section
-        this.createPlayerNameSection();
+    this.createPlayerNameSection();
 
         // Create stroke selection cards - bigger and cleaner
         this.createStrokeCards();
@@ -112,10 +112,10 @@ export default class MenuScene extends Phaser.Scene {
         const width = this.cameras.main.width;
 
         const strokes = [
-            { name: 'Freestyle', key: 'freestyle', emoji: '🏊‍♂️', desc: 'Fast & Efficient' },
-            { name: 'Backstroke', key: 'backstroke', emoji: '🏊‍♀️', desc: 'Smooth & Steady' },
-            { name: 'Breaststroke', key: 'breaststroke', emoji: '🏊', desc: 'Power & Technique' },
-            { name: 'Butterfly', key: 'butterfly', emoji: '🦋', desc: 'Speed & Strength' }
+            { name: 'Freestyle', key: 'freestyle', emoji: 'FS', desc: 'Fast & Efficient' },
+            { name: 'Backstroke', key: 'backstroke', emoji: 'BS', desc: 'Smooth & Steady' },
+            { name: 'Breaststroke', key: 'breaststroke', emoji: 'BR', desc: 'Power & Technique' },
+            { name: 'Butterfly', key: 'butterfly', emoji: 'FLY', desc: 'Speed & Strength' }
         ];
 
         // Section title - larger and more prominent
@@ -147,8 +147,8 @@ export default class MenuScene extends Phaser.Scene {
             card.strokeRoundedRect(x - cardWidth/2, y - cardHeight/2, cardWidth, cardHeight, 15);
 
             // Interactive area
-            const button = this.add.rectangle(x, y, cardWidth, cardHeight, 0x000000, 0)
-                .setInteractive();
+            const button = this.add.rectangle(x, y, cardWidth, cardHeight, 0x000000, 0) // Uncommented
+                .setInteractive(); // Uncommented
 
             // Stroke emoji - larger
             this.add.text(x - cardWidth/3, y, stroke.emoji, {
