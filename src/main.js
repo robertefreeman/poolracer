@@ -21,6 +21,13 @@ const config = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
+    physics: { // Added this block
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 },
+            debug: false
+        }
+    },
     scene: [PreloadScene, OrientationScene, MenuScene, RaceScene, ResultsScene, HighScoreScene]
 };
 
