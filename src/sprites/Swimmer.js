@@ -152,6 +152,19 @@ export default class Swimmer {
             this.body, this.head, this.cap, this.leftArm, this.rightArm, 
             this.leftLeg, this.rightLeg, this.leftFoot, this.rightFoot
         ]);
+
+        // Rotate individual parts for portrait mode if applicable
+        if (this.isPortraitMode) {
+            this.body.angle = -90;
+            this.head.angle = -90;
+            this.cap.angle = -90;
+            this.leftArm.angle = -90;
+            this.rightArm.angle = -90;
+            this.leftLeg.angle = -90;
+            this.rightLeg.angle = -90;
+            this.leftFoot.angle = -90;
+            this.rightFoot.angle = -90;
+        }
         
         // Store team info for debugging
         this.teamName = teamName;
@@ -178,25 +191,41 @@ export default class Swimmer {
         
         // Update visual position based on orientation
         if (this.isPortraitMode) {
-            // Portrait mode: swimmers move vertically (top to bottom)
-            const newY = 100 + this.position;
-            this.updatePosition(this.x, newY);
+            // Portrait mode: swimmers move vertically (bottom to top)
+            // Ensure this.scene.poolWorldLength, this.scene.pixelsPerMeter, and this.scene.raceDistanceMeters are set by RaceScene
+            const startLineYOffset = 100; // How far from the true bottom the visual start line is
+            const actualStartLineY = this.scene.poolWorldLength - startLineYOffset; // e.g. 3000 - 100 = 2900
             
-            // Check for finish in portrait mode
-            const finishDistance = (this.scene.portraitConfig && this.scene.portraitConfig.poolLength) ? 
-                this.scene.portraitConfig.poolLength : 500;
-            if (this.position >= finishDistance && !this.finished) {
+            const newY = actualStartLineY - (this.position * this.scene.pixelsPerMeter);
+            this.updatePosition(this.x, newY); // this.x is managed by lane position
+
+            // Finish line check for portrait mode (swimming towards Y=0 or a small offset)
+            // This assumes this.position is correctly tracking progress towards raceConfig.raceDistanceMeters
+            if (this.position >= this.scene.raceDistanceMeters && !this.finished) { // raceDistanceMeters needs to be available
                 this.finished = true;
                 this.finishTime = time;
                 this.scene.swimmerFinished(this);
             }
         } else {
-            // Landscape mode: swimmers move horizontally (left to right)
-            const newX = 80 + this.position;
-            this.updatePosition(newX, this.y);
+            // Landscape mode: swimmers move horizontally (left to right) - THIS WILL BE DEPRECATED/REMOVED
+            // const newX = 80 + this.position;
+            // this.updatePosition(newX, this.y);
             
             // Check for finish in landscape mode
-            if (this.position >= 1120 && !this.finished) {
+            // if (this.position >= 1120 && !this.finished) {
+            //     this.finished = true;
+            //     this.finishTime = time;
+            //     this.scene.swimmerFinished(this);
+            // }
+            // Fallback: If not portrait, ensure game doesn't break by using portrait logic as default for now
+            // This part should ideally be removed if landscape is fully deprecated.
+            const startLineYOffset = 100;
+            const actualStartLineY = (this.scene.poolWorldLength || 600) - startLineYOffset;
+            const pixelsPerMeter = this.scene.pixelsPerMeter || ( (this.scene.poolWorldLength || 600) / (this.scene.raceDistanceMeters || 25) );
+            const newYFallback = actualStartLineY - (this.position * pixelsPerMeter);
+            this.updatePosition(this.x, newYFallback);
+
+            if (this.position >= (this.scene.raceDistanceMeters || 25) && !this.finished) {
                 this.finished = true;
                 this.finishTime = time;
                 this.scene.swimmerFinished(this);
@@ -287,6 +316,36 @@ export default class Swimmer {
     
     updateStrokeAnimation() {
         const intensity = Math.min(this.speed / 100, 2.0); // Animation intensity based on speed
+
+        if (this.isPortraitMode) { // Apply only if in new portrait mode
+            const phase = Math.sin(this.animFrame * Math.PI / 4);
+            const armOffset = phase * (5 + intensity * 2);
+
+            // Assuming this.x, this.y is the center of the rotated swimmer.
+            // Arms move left/right from the center (which is visually up/down along the body)
+            this.leftArm.x = this.x + armOffset;  // Adjust x for side-to-side movement
+            this.rightArm.x = this.x - armOffset; // Adjust x for side-to-side movement
+
+            // Keep arms aligned with current y (center)
+            this.leftArm.y = this.y - 7; // Maintain y offset from center
+            this.rightArm.y = this.y + 7; // Maintain y offset from center
+
+            const legKick = Math.sin(this.animFrame * Math.PI / 2) * (2 + intensity);
+            // Legs move left/right from center
+            this.leftLeg.x = this.x + legKick;
+            this.rightLeg.x = this.x - legKick;
+            this.leftLeg.y = this.y - 4;
+            this.rightLeg.y = this.y + 4;
+
+            // Make feet follow legs
+            this.leftFoot.x = this.leftLeg.x;
+            this.rightFoot.x = this.rightLeg.x;
+            this.leftFoot.y = this.leftLeg.y;
+            this.rightFoot.y = this.rightLeg.y;
+
+            // Prevent original animation logic from running if in new portrait mode
+            return;
+        }
         
         switch (this.strokeType) {
             case 'freestyle':
