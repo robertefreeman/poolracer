@@ -116,17 +116,10 @@ export default class ResultsScene extends Phaser.Scene {
             if (isPlayer) {
                 displayName = this.playerName;
             } else {
-                displayName = `Swimmer ${result.swimmer.lane + 1}`;
+                displayName = `Swimmer ${result.swimmer.lane + 1}`; // Corrected from result.swimmer.lane to result.swimmer.lane + 1 as per original
             }
             this.add.text(textStartX, currentY, 'Name:', labelStyle);
             this.add.text(textStartX + valueOffsetX, currentY, displayName, { ...valueStyleBase, fill: nameColor });
-            currentY += lineSpacing;
-
-            // --- Team ---
-            const teamNameStr = this.getShortTeamName(result.swimmer.lane);
-            const teamColor = isPlayer ? '#ffff00' : '#cccccc';
-            this.add.text(textStartX, currentY, 'Team:', labelStyle);
-            this.add.text(textStartX + valueOffsetX, currentY, teamNameStr, { ...valueStyleBase, fill: teamColor });
             currentY += lineSpacing;
 
             // --- Time ---
@@ -140,28 +133,8 @@ export default class ResultsScene extends Phaser.Scene {
             }
             currentY += lineSpacing;
 
-            // --- Strokes ---
-            this.add.text(textStartX, currentY, 'Strokes:', labelStyle);
-            this.add.text(textStartX + valueOffsetX, currentY, `${result.swimmer.strokeCount}`, { ...valueStyleBase, fill: '#aaaaaa' });
-            currentY += lineSpacing;
-
-            // --- Player Specific Stats (Accuracy / Misses) ---
-            if (isPlayer) {
-                if (isDisqualified) {
-                    this.add.text(textStartX, currentY, 'Reason:', labelStyle);
-                    this.add.text(textStartX + valueOffsetX, currentY, `${result.swimmer.missTapCount} misses`, { ...valueStyleBase, fill: '#ff0000' });
-                } else {
-                    const accuracy = result.swimmer.totalTapCount > 0 ?
-                        ((result.swimmer.totalTapCount - result.swimmer.missTapCount) / result.swimmer.totalTapCount * 100) : 100;
-                    const accuracyColor = accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000';
-                    this.add.text(textStartX, currentY, 'Accuracy:', labelStyle);
-                    this.add.text(textStartX + valueOffsetX, currentY, `${accuracy.toFixed(0)}%`, { ...valueStyleBase, fill: accuracyColor });
-                }
-                currentY += lineSpacing;
-            }
-
             // Add a visual separator or just space for the next block
-            currentY += blockSpacing - lineSpacing; // Spacing before next swimmer block
+            currentY += blockSpacing; // Adjusted spacing: use full blockSpacing after the last item (Time)
         });
     }
 
