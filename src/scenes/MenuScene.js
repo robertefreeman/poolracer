@@ -309,31 +309,114 @@ export default class MenuScene extends Phaser.Scene {
 
         // Make input interactive
         this.nameInputBg.setInteractive();
-        this.nameInputBg.on('pointerdown', () => {
-            this.promptForName();
-        });
+        this.htmlNameInput = document.getElementById('nameInput'); // Store reference
 
-        // Setup keyboard input
+        if (this.isMobile && this.htmlNameInput) {
+            // Mobile: Use HTML input
+            this.htmlNameInput.value = this.playerName; // Initialize with current name
+
+            this.nameInputBg.on('pointerdown', () => {
+                this.nameInputActive = true;
+                this.nameInputBg.setStrokeStyle(3, 0x88ddff); // Highlight effect
+
+                this.htmlNameInput.style.display = 'block';
+                this.htmlNameInput.value = this.playerName; // Ensure it has current name
+
+                // Basic positioning - can be improved
+                const gameCanvas = this.sys.game.canvas;
+                const canvasRect = gameCanvas.getBoundingClientRect();
+                const nameTextBounds = this.nameText.getBounds();
+                const scaleX = canvasRect.width / gameCanvas.width;
+                const scaleY = canvasRect.height / gameCanvas.height;
+
+                this.htmlNameInput.style.position = 'absolute';
+                this.htmlNameInput.style.left = `${canvasRect.left + nameTextBounds.x * scaleX}px`;
+                this.htmlNameInput.style.top = `${canvasRect.top + nameTextBounds.y * scaleY}px`;
+                this.htmlNameInput.style.width = `${nameTextBounds.width * scaleX}px`;
+                this.htmlNameInput.style.height = `${nameTextBounds.height * scaleY}px`;
+                this.htmlNameInput.style.fontSize = `${18 * scaleY}px`;
+                this.htmlNameInput.style.border = 'none';
+                this.htmlNameInput.style.background = 'transparent'; // Or a debug color: 'rgba(255,0,0,0.2)';
+                this.htmlNameInput.style.color = this.nameText.style.fill;
+                this.htmlNameInput.style.textAlign = 'center';
+                this.htmlNameInput.style.outline = 'none';
+
+                this.htmlNameInput.focus();
+                this.nameText.setVisible(false); // Hide Phaser text
+            });
+
+            this.htmlNameInput.addEventListener('input', (event) => {
+                this.playerName = event.target.value.substring(0, 12); // Max 12 chars
+                event.target.value = this.playerName; // Ensure input reflects truncated value
+                // Phaser this.nameText is hidden, so no need to call updateNameDisplay() here.
+            });
+
+            const onMobileInputEnd = () => {
+                if (!this.nameInputActive) return;
+                this.htmlNameInput.style.display = 'none';
+                this.nameText.setVisible(true);
+                // this.playerName is already updated from 'input' event
+                this.finishNameEntry(); // This will trim, save, and call updateNameDisplay
+            };
+
+            this.htmlNameInput.addEventListener('blur', () => {
+                // Add a small delay to allow 'Enter' keydown to potentially clear focus first
+                // and prevent double calls if Enter also triggers blur.
+                setTimeout(onMobileInputEnd, 50);
+            });
+
+            this.htmlNameInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    this.htmlNameInput.blur(); // Triggers blur listener
+                } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.htmlNameInput.blur(); // Treat escape like finishing entry for simplicity here
+                }
+            });
+
+        } else {
+            // Non-mobile: Original Phaser keyboard input logic
+            this.nameInputBg.on('pointerdown', () => {
+                this.promptForName();
+            });
+        }
+
+        // Setup Phaser keyboard input (primarily for non-mobile)
         this.input.keyboard.on('keydown', (event) => {
-            if (event.key === 'Enter' && this.nameInputActive) {
+            // If mobile and HTML input is focused and visible, Phaser shouldn't handle key events for typing
+            if (this.isMobile && this.htmlNameInput && document.activeElement === this.htmlNameInput && this.htmlNameInput.style.display === 'block') {
+                // Allow Enter/Escape to be handled by the HTML input's own listeners above
+                if (event.key === 'Enter' || event.key === 'Escape') {
+                    // Already handled by HTML input's listeners
+                }
+                return; // Stop Phaser from processing other keys
+            }
+
+            if (!this.nameInputActive) return; // Only process if name input is generally active
+
+            if (event.key === 'Enter') {
                 this.finishNameEntry();
-            } else if (event.key === 'Escape' && this.nameInputActive) {
+            } else if (event.key === 'Escape') {
                 this.cancelNameEntry();
-            } else if (event.key === 'Backspace' && this.nameInputActive) {
+            } else if (event.key === 'Backspace') {
                 if (this.playerName.length > 0) {
                     this.playerName = this.playerName.slice(0, -1);
                     this.updateNameDisplay();
                 }
-            } else if (event.key.length === 1 && this.nameInputActive && this.playerName.length < 12) {
-                if (/[a-zA-Z0-9 ]/.test(event.key)) {
-                    this.playerName += event.key;
-                    this.updateNameDisplay();
+            } else if (event.key.length === 1 && this.playerName.length < 12) {
+                // Check if it's not mobile or if it is mobile but html input isn't the one handling things
+                 if (!this.isMobile || (this.isMobile && document.activeElement !== this.htmlNameInput)) {
+                    if (/[a-zA-Z0-9 ]/.test(event.key)) { // Allow spaces
+                        this.playerName += event.key;
+                        this.updateNameDisplay();
+                    }
                 }
             }
         });
     }
 
-    promptForName() {
+    promptForName() { // Primarily for non-mobile, or initial setup
         this.nameInputActive = true;
         this.nameInputBg.setStrokeStyle(3, 0x88ddff);
         if (!this.playerName) {
@@ -343,19 +426,42 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     finishNameEntry() {
+        if (!this.nameInputActive) return; // Prevent issues if called multiple times
         this.nameInputActive = false;
         this.nameInputBg.setStrokeStyle(2, 0x66ccff);
+
+        if (this.isMobile && this.htmlNameInput && this.htmlNameInput.style.display !== 'none') {
+            this.htmlNameInput.style.display = 'none';
+        }
+        this.nameText.setVisible(true);
+
+        this.playerName = this.playerName.trim(); // Trim whitespace
         localStorage.setItem('poolracer_playername', this.playerName);
+
+        this.updateNameDisplay(); // Update Phaser text with final (possibly trimmed) name
     }
 
-    cancelNameEntry() {
+    cancelNameEntry() { // Primarily for non-mobile Escape key
+        if (!this.nameInputActive && !(this.isMobile && this.htmlNameInput && this.htmlNameInput.style.display !== 'none')) {
+            return;
+        }
         this.nameInputActive = false;
         this.nameInputBg.setStrokeStyle(2, 0x66ccff);
+
+        if (this.isMobile && this.htmlNameInput) {
+            this.htmlNameInput.style.display = 'none';
+        }
+        this.nameText.setVisible(true);
+
         this.playerName = localStorage.getItem('poolracer_playername') || '';
         this.updateNameDisplay();
     }
 
     updateNameDisplay() {
+        // This function's job is to update the Phaser text object.
+        // The HTML input updates itself via its 'input' event and value property.
+        this.nameText.setVisible(true); // Ensure it's visible
+
         if (this.playerName.length > 0) {
             this.nameText.setText(this.playerName);
             this.nameText.setFill('#ffffff');
