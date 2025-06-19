@@ -127,17 +127,22 @@ export default class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Much larger cards with better proportions
-        const cardWidth = this.isMobile ? 280 : 320;
+        const cardWidth = width * 0.7; // Adjusted for portrait
         const cardHeight = this.isMobile ? 100 : 120;
         const spacing = this.isMobile ? 25 : 35;
-        const totalWidth = (cardWidth * 2) + spacing;
-        const startX = (width - totalWidth) / 2;
+        // const totalWidth = (cardWidth * 2) + spacing; // Old
+        // const startX = (width - totalWidth) / 2; // Old
 
         strokes.forEach((stroke, index) => {
-            const row = Math.floor(index / 2);
-            const col = index % 2;
-            const x = startX + (col * (cardWidth + spacing)) + (cardWidth / 2);
-            const y = 380 + (row * (cardHeight + spacing));
+            // const row = Math.floor(index / 2); // Old
+            // const col = index % 2; // Old
+            // const x = startX + (col * (cardWidth + spacing)) + (cardWidth / 2); // Old
+            // const y = 380 + (row * (cardHeight + spacing)); // Old
+
+            // New calculations for vertical stack:
+            const x = width / 2; // Center each card horizontally
+            const initialCardY = 380; // Starting Y for the first card
+            const y = initialCardY + (index * (cardHeight + spacing));
 
             // Card background with cleaner design
             const card = this.add.graphics();

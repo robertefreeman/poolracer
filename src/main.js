@@ -13,8 +13,8 @@ import { MobileDetection } from './utils/MobileDetection.js';
 // Simple but working configuration
 const config = {
     type: Phaser.AUTO,
-    width: 1280,
-    height: 720,
+    width: 720,  // Changed
+    height: 1280, // Changed
     parent: 'game-container',
     backgroundColor: '#0066cc',
     scale: {
