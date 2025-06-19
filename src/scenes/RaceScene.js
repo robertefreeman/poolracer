@@ -14,7 +14,7 @@ export default class RaceScene extends Phaser.Scene {
 
     create() {
         this.displayedRaceDistanceMeters = 25;
-        const actualRaceDistanceFactor = 10; // Makes the race 10x longer
+        const actualRaceDistanceFactor = 5; // Makes the race 10x longer
         this.actualRaceDistanceMeters = this.displayedRaceDistanceMeters * actualRaceDistanceFactor;
 
         this.pixelsPerMeter = 100; // Pixels per one actual meter

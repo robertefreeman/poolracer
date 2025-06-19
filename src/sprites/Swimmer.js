@@ -14,7 +14,7 @@ export default class Swimmer {
         this.speed = 0;
         this.baseSpeed = 70; // Further reduced from 80 to slow down player
         this.momentum = 0; // Current forward momentum
-        this.maxMomentum = 13; // Further reduced from 150 to cap maximum speed
+        this.maxMomentum = 6.5; // Further reduced from 150 to cap maximum speed
         this.momentumDecay = 4; // Increased from 30 for faster momentum loss
         this.lastStrokeTime = 0;
         this.strokeCount = 0;
@@ -268,7 +268,7 @@ export default class Swimmer {
         } else {
             // AI uses enhanced speed system - average 100 pixels/sec with stroke-specific adjustments
             const strokeMultiplier = this.getStrokeSpeedMultiplier();
-            this.speed = 10 * (this.aiSkill || 1.0) * strokeMultiplier;
+            this.speed = 5 * (this.aiSkill || 1.0) * strokeMultiplier;
         }
     }
     
@@ -656,16 +656,16 @@ export default class Swimmer {
         if (keyPressed === this.expectedNextKey) {
             // Correct alternation - add momentum
             wasCorrectKey = true;
-            momentumGain = 3; // Reduced from 40 to slow progression
+            momentumGain = 1.5; // Reduced from 40 to slow progression
             
             // Timing bonus for good rhythm (250-700ms for tighter timing window)
             if (this.strokeCount > 1) {
                 if (timeSinceLastStroke >= 250 && timeSinceLastStroke <= 700) {
-                    momentumGain += 1; // Reduced bonus from 10 to 5
+                    momentumGain += 0.5; // Reduced bonus from 10 to 5
                 } else if (timeSinceLastStroke < 250) {
                     momentumGain += 0; // Reduced bonus from 3 to 2
                 } else if (timeSinceLastStroke > 1000) {
-                    momentumGain -= 2; // Keep penalty the same
+                    momentumGain -= 1; // Keep penalty the same
                 }
             }
             
