@@ -17,7 +17,7 @@ export default class RaceScene extends Phaser.Scene {
         const actualRaceDistanceFactor = 5; // Makes the race 10x longer
         this.actualRaceDistanceMeters = this.displayedRaceDistanceMeters * actualRaceDistanceFactor;
 
-        this.pixelsPerMeter = 100; // Pixels per one actual meter
+        this.pixelsPerMeter = 50; // Pixels per one actual meter
 
         // This is the property Swimmer.js currently uses for finish condition via this.scene.raceDistanceMeters
         this.raceDistanceMeters = this.actualRaceDistanceMeters;
