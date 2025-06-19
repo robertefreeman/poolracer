@@ -143,6 +143,7 @@ export default class ResultsScene extends Phaser.Scene {
         if (!playerResult) return;
 
         const width = this.cameras.main.width;
+        const height = this.cameras.main.height; // Added height declaration
         const isDisqualified = playerResult.swimmer.missTapCount > 2;
         let message = '';
         let color = '#ffffff';
@@ -170,8 +171,12 @@ export default class ResultsScene extends Phaser.Scene {
             }
         }
 
-        // Position notifications below high scores button (y = 620+)
-        this.add.text(width / 2, 620, message, {
+        const placeMessageY = height - 240;
+        const highScoreMessageY = height - 210;
+        const analysisY = height - 180;
+
+        // Main place message
+        this.add.text(width / 2, placeMessageY, message, {
             font: 'bold 20px Arial',
             fill: color,
             backgroundColor: '#000000',
@@ -180,7 +185,7 @@ export default class ResultsScene extends Phaser.Scene {
 
         // High score celebration if applicable (only if not DQ)
         if (!isDisqualified && this.isHighScore && this.highScorePosition) {
-            this.add.text(width / 2, 650, `🎉 NEW HIGH SCORE! You're #${this.highScorePosition} in ${this.strokeType}! 🎉`, {
+            this.add.text(width / 2, highScoreMessageY, `🎉 NEW HIGH SCORE! You're #${this.highScorePosition} in ${this.strokeType}! 🎉`, {
                 font: 'bold 18px Arial',
                 fill: '#00ff00',
                 backgroundColor: '#000000',
@@ -190,8 +195,8 @@ export default class ResultsScene extends Phaser.Scene {
 
         // Performance analysis
         const analysis = this.getPerformanceAnalysis(playerResult.swimmer, isDisqualified);
-        const analysisY = (!isDisqualified && this.isHighScore) ? 680 : 650;
-        this.add.text(width / 2, analysisY, analysis, {
+        // const analysisY = (!isDisqualified && this.isHighScore) ? 680 : 650; // Old logic
+        this.add.text(width / 2, analysisY, analysis, { // New Y position
             font: '14px Arial',
             fill: '#cccccc',
             align: 'center'
@@ -249,12 +254,17 @@ export default class ResultsScene extends Phaser.Scene {
 
     createButtons() {
         const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        const buttonY = height - 150;
+        const highScoresBtnY = buttonY + 50;
+        const tipY = highScoresBtnY + 30; // Adjusted to be below high scores button
 
         // Race Again button
-        const raceAgainBtn = this.add.rectangle(width / 2 - 100, 500, 150, 40, 0x0066cc)
+        const raceAgainBtn = this.add.rectangle(width / 2 - 100, buttonY, 150, 40, 0x0066cc)
             .setInteractive();
         
-        this.add.text(width / 2 - 100, 500, 'Race Again', {
+        this.add.text(width / 2 - 100, buttonY, 'Race Again', {
             font: '16px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
@@ -272,10 +282,10 @@ export default class ResultsScene extends Phaser.Scene {
         });
 
         // Main Menu button
-        const menuBtn = this.add.rectangle(width / 2 + 100, 500, 150, 40, 0x666666)
+        const menuBtn = this.add.rectangle(width / 2 + 100, buttonY, 150, 40, 0x666666)
             .setInteractive();
         
-        this.add.text(width / 2 + 100, 500, 'Main Menu', {
+        this.add.text(width / 2 + 100, buttonY, 'Main Menu', {
             font: '16px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
@@ -292,19 +302,19 @@ export default class ResultsScene extends Phaser.Scene {
             this.scene.start('MenuScene');
         });
 
-        // Instructions for next race
-        this.add.text(width / 2, 550, 'Tip: Alternate LEFT and RIGHT arrows in a steady rhythm for best results!', {
-            font: '12px Arial',
-            fill: '#aaaaaa'
-        }).setOrigin(0.5);
-
         // High Scores button
-        const highScoresBtn = this.add.rectangle(width / 2, 580, 150, 30, 0x4a90e2)
+        const highScoresBtn = this.add.rectangle(width / 2, highScoresBtnY, 150, 30, 0x4a90e2)
             .setInteractive();
         
-        this.add.text(width / 2, 580, '🏆 High Scores', {
+        this.add.text(width / 2, highScoresBtnY, '🏆 High Scores', {
             font: '14px Arial',
             fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        // Instructions for next race - now positioned below High Scores button
+        this.add.text(width / 2, tipY, 'Tip: Alternate LEFT and RIGHT arrows in a steady rhythm for best results!', {
+            font: '12px Arial',
+            fill: '#aaaaaa'
         }).setOrigin(0.5);
 
         highScoresBtn.on('pointerover', () => {
