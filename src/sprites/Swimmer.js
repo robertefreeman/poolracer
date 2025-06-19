@@ -317,185 +317,337 @@ export default class Swimmer {
     updateStrokeAnimation() {
         const intensity = Math.min(this.speed / 100, 2.0); // Animation intensity based on speed
 
-        if (this.isPortraitMode) { // Apply only if in new portrait mode
-            const phase = Math.sin(this.animFrame * Math.PI / 4);
-            const armOffset = phase * (5 + intensity * 2);
+        if (this.isPortraitMode) {
+            // Portrait Mode Animations (-90 degree rotation applied to parts)
+            // Original X-axis (length of swimmer) is now Screen Y-axis (negative for forward)
+            // Original Y-axis (width of swimmer) is now Screen X-axis
+            switch (this.strokeType) {
+                case 'freestyle':
+                    const freestylePhase = Math.sin(this.animFrame * Math.PI / 4);
+                    const armReach = freestylePhase * (5 + intensity * 1.5);
 
-            // Assuming this.x, this.y is the center of the rotated swimmer.
-            // Arms move left/right from the center (which is visually up/down along the body)
-            this.leftArm.x = this.x + armOffset;  // Adjust x for side-to-side movement
-            this.rightArm.x = this.x - armOffset; // Adjust x for side-to-side movement
+                    // Sideways arm movement (original Y) -> now screen X
+                    this.leftArm.x = this.x - 7 + armReach;
+                    this.rightArm.x = this.x + 7 - armReach;
 
-            // Keep arms aligned with current y (center)
-            this.leftArm.y = this.y - 7; // Maintain y offset from center
-            this.rightArm.y = this.y + 7; // Maintain y offset from center
+                    // Forward/backward arm reach (original X) -> now screen Y (negative for forward)
+                    // Base position this.y + 6 (adjust if needed, original was this.x + 6)
+                    this.leftArm.y = this.y + 6 - (Math.max(0, freestylePhase) * 5);
+                    this.rightArm.y = this.y + 6 - (Math.max(0, -freestylePhase) * 5);
 
-            const legKick = Math.sin(this.animFrame * Math.PI / 2) * (2 + intensity);
-            // Legs move left/right from center
-            this.leftLeg.x = this.x + legKick;
-            this.rightLeg.x = this.x - legKick;
-            this.leftLeg.y = this.y - 4;
-            this.rightLeg.y = this.y + 4;
+                    this.leftArm.rotation = freestylePhase * 0.5;
+                    this.rightArm.rotation = -freestylePhase * 0.5;
 
-            // Make feet follow legs
-            this.leftFoot.x = this.leftLeg.x;
-            this.rightFoot.x = this.rightLeg.x;
-            this.leftFoot.y = this.leftLeg.y;
-            this.rightFoot.y = this.rightLeg.y;
+                    const legKick = Math.sin(this.animFrame * Math.PI / 2) * (3 + intensity * 1.2);
+                    // Sideways leg kick (original Y) -> now screen X
+                    this.leftLeg.x = this.x - 4 + legKick;
+                    this.rightLeg.x = this.x + 4 - legKick;
 
-            // Prevent original animation logic from running if in new portrait mode
-            return;
-        }
-        
-        switch (this.strokeType) {
-            case 'freestyle':
-                // Alternating arm strokes with reach and pull
-                const freestylePhase = Math.sin(this.animFrame * Math.PI / 4);
-                const armReach = freestylePhase * (4 + intensity);
+                    // Base Y for legs (original was X offset of -8 from this.x)
+                    // In portrait, this means legs are towards bottom of screen from this.y
+                    this.leftLeg.y = this.y + 8;
+                    this.rightLeg.y = this.y + 8;
+
+                    // Feet X (sideways motion, similar to legs but with the 0.8 factor on kick)
+                    // Original landscape: this.leftFoot.y = this.y - 4 + legKick * 0.8;
+                    this.leftFoot.x = (this.x - 4) + legKick * 0.8;
+                    this.rightFoot.x = (this.x + 4) - legKick * 0.8;
+
+                    // Feet Y (base position further towards bottom from leg connection point)
+                    // Original landscape: feetX = legX - 8 (feet were -8 from leg connection X)
+                    // Portrait: feetY = legY + 8 (feet are +8 from leg connection Y)
+                    this.leftFoot.y = this.leftLeg.y + 8;
+                    this.rightFoot.y = this.rightLeg.y + 8;
+
+                    this.body.rotation = freestylePhase * 0.08; // Rotation around Z-axis (visual roll)
+                    break;
                 
-                // Alternating arm movements (arms positioned correctly for forward-facing)
-                this.leftArm.y = this.y - 7 + armReach;
-                this.rightArm.y = this.y + 7 - armReach;
+                case 'backstroke':
+                    const backstrokePhase = Math.cos(this.animFrame * Math.PI / 4);
+                    const backstrokeOffset = backstrokePhase * (7 + intensity * 1.2);
+
+                    // Sideways arm movement (original Y) -> now screen X
+                    this.leftArm.x = this.x - 7 + backstrokeOffset;
+                    this.rightArm.x = this.x + 7 - backstrokeOffset;
+
+                    // Forward/backward arm reach (original X, "over the head") -> now screen Y (negative for forward/up)
+                    // Base position this.y + 6
+                    this.leftArm.y = this.y + 6 - (backstrokePhase > 0 ? Math.abs(backstrokePhase) * 5 : Math.abs(backstrokePhase) * 3);
+                    this.rightArm.y = this.y + 6 - (backstrokePhase < 0 ? Math.abs(backstrokePhase) * 5 : Math.abs(backstrokePhase) * 3);
+
+                    this.leftArm.rotation = backstrokePhase * 0.7;
+                    this.rightArm.rotation = -backstrokePhase * 0.7;
+
+                    const backKick = Math.sin(this.animFrame * Math.PI / 2) * (3 + intensity * 1.1);
+                    // Sideways leg kick (original Y) -> now screen X
+                    this.leftLeg.x = this.x - 4 + backKick;
+                    this.rightLeg.x = this.x + 4 - backKick;
+                    // Base Y for legs (original X offset: this.x - 8) -> portrait Y offset: this.y + 8
+                    this.leftLeg.y = this.y + 8;
+                    this.rightLeg.y = this.y + 8;
+
+                    // Feet X (sideways motion, similar to legs but with the 0.8 factor on kick)
+                    // Original landscape: this.leftFoot.y = this.y - 4 + backKick * 0.8;
+                    this.leftFoot.x = (this.x - 4) + backKick * 0.8;
+                    this.rightFoot.x = (this.x + 4) - backKick * 0.8;
+
+                    // Feet Y (base position further towards bottom from leg connection point)
+                    // Original landscape: feetX = legX - 8 (feet were -8 from leg connection X)
+                    // Portrait: feetY = legY + 8 (feet are +8 from leg connection Y)
+                    this.leftFoot.y = this.leftLeg.y + 8;
+                    this.rightFoot.y = this.rightLeg.y + 8;
+
+                    this.head.setFillStyle(0xffeedd);
+                    break;
                 
-                // Arms extend forward during reach phase (toward finish line)
-                this.leftArm.x = this.x + 6 + Math.max(0, freestylePhase) * 4;
-                this.rightArm.x = this.x + 6 + Math.max(0, -freestylePhase) * 4;
+                case 'breaststroke':
+                    const breastPhase = Math.sin(this.animFrame * Math.PI / 3) * (1 + intensity * 0.5);
+                    const armSweep = Math.abs(breastPhase) * 10;
+
+                    // Sideways arm sweep (original Y) -> now screen X
+                    this.leftArm.x = this.x - 7 - armSweep;
+                    this.rightArm.x = this.x + 7 + armSweep;
+
+                    // Forward/backward arm pull (original X) -> now screen Y (negative for forward)
+                    // Base position this.y + 6
+                    const armForwardExtension = Math.cos(this.animFrame * Math.PI / 3) * 5;
+                    this.leftArm.y = this.y + 6 - armForwardExtension;
+                    this.rightArm.y = this.y + 6 - armForwardExtension;
+
+                    this.leftArm.width = 8 + armSweep * 0.6;
+                    this.rightArm.width = 8 + armSweep * 0.6;
+                    this.leftArm.rotation = breastPhase * 0.3;
+                    this.rightArm.rotation = -breastPhase * 0.3;
+
+                    const breastKickPhase = Math.sin(this.animFrame * Math.PI / 3); // Renamed from breastKick to avoid conflict
+                    const legSeparation = Math.abs(breastKickPhase) * 4;
+                    // Sideways leg separation (original Y) -> now screen X
+                    this.leftLeg.x = this.x - 4 - legSeparation;
+                    this.rightLeg.x = this.x + 4 + legSeparation;
+
+                    // Backward leg propulsion (original X) -> now screen Y (positive for backward)
+                    // Base position this.y - 8 (legs behind center)
+                    const legPropulsion = Math.max(0, breastKickPhase) * 4;
+                    this.leftLeg.y = this.y - 8 + legPropulsion;
+                    this.rightLeg.y = this.y - 8 + legPropulsion;
+
+                    // Feet follow legs
+                    this.leftFoot.x = this.x - 4 - legSeparation * 1.3;
+                    this.rightFoot.x = this.x + 4 + legSeparation * 1.3;
+                    this.leftFoot.y = this.y - 8 + Math.max(0, breastKickPhase) * 3; // Adjusted X factor from *2 to *3 as per general enhancement
+                    this.rightFoot.y = this.y - 8 + Math.max(0, breastKickPhase) * 3;
+
+                    // Body undulation (original scaleY along length) -> now screen scaleX
+                    this.body.scaleX = 1.0 + Math.sin(this.animFrame * Math.PI / 3) * 0.2;
+                    this.body.scaleY = 1.0; // Reset scaleY if it was changed elsewhere
+                    break;
                 
-                // Enhanced arm rotation for stroke motion
-                this.leftArm.rotation = freestylePhase * 0.4;
-                this.rightArm.rotation = -freestylePhase * 0.4;
-                
-                // Flutter kick - alternating leg movements
-                const legKick = Math.sin(this.animFrame * Math.PI / 2) * (2 + intensity);
-                this.leftLeg.y = this.y - 4 + legKick;
-                this.rightLeg.y = this.y + 4 - legKick;
-                
-                // Feet follow legs with slight delay
-                this.leftFoot.y = this.y - 4 + legKick * 0.8;
-                this.rightFoot.y = this.y + 4 - legKick * 0.8;
-                
-                // Slight body roll for freestyle
-                this.body.rotation = freestylePhase * 0.05;
-                break;
-                
-            case 'backstroke':
-                // Backward alternating strokes - arms reach back over head
-                const backstrokePhase = Math.cos(this.animFrame * Math.PI / 4);
-                const backstrokeOffset = backstrokePhase * (6 + intensity);
-                
-                this.leftArm.y = this.y - 7 + backstrokeOffset;
-                this.rightArm.y = this.y + 7 - backstrokeOffset;
-                
-                // Arms rotate more dramatically for backstroke windmill motion
-                this.leftArm.rotation = backstrokePhase * 0.6;
-                this.rightArm.rotation = -backstrokePhase * 0.6;
-                
-                // Arms extend back over head for backstroke (but swimmer is now oriented forward)
-                this.leftArm.x = this.x + 6 + Math.abs(backstrokePhase) * 4;
-                this.rightArm.x = this.x + 6 + Math.abs(backstrokePhase) * 4;
-                
-                // Flutter kick for backstroke (similar to freestyle but on back)
-                const backKick = Math.sin(this.animFrame * Math.PI / 2) * (2 + intensity);
-                this.leftLeg.y = this.y - 4 + backKick;
-                this.rightLeg.y = this.y + 4 - backKick;
-                
-                // Feet follow legs
-                this.leftFoot.y = this.y - 4 + backKick * 0.8;
-                this.rightFoot.y = this.y + 4 - backKick * 0.8;
-                
-                // Keep swimmer face up color
-                this.head.setFillStyle(0xffeedd);
-                break;
-                
-            case 'breaststroke':
-                // Synchronized wide arm movements - arms sweep out and in
-                const breastPhase = Math.sin(this.animFrame * Math.PI / 3) * (1 + intensity * 0.5);
-                const armSweep = Math.abs(breastPhase) * 8; // Arms sweep wider
-                
-                // Arms move out and in synchronously
-                this.leftArm.y = this.y - 7 - armSweep;
-                this.rightArm.y = this.y + 7 + armSweep;
-                
-                // Arms extend forward and pull back
-                this.leftArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 3) * 4;
-                this.rightArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 3) * 4;
-                
-                // Arms get wider during sweep
-                this.leftArm.width = 8 + armSweep * 0.5;
-                this.rightArm.width = 8 + armSweep * 0.5;
-                
-                // Slight rotation for sweep motion
-                this.leftArm.rotation = breastPhase * 0.3;
-                this.rightArm.rotation = -breastPhase * 0.3;
-                
-                // Breaststroke kick - legs come together and kick out
-                const breastKick = Math.sin(this.animFrame * Math.PI / 3);
-                const legSeparation = Math.abs(breastKick) * 3;
-                
-                this.leftLeg.y = this.y - 4 - legSeparation;
-                this.rightLeg.y = this.y + 4 + legSeparation;
-                
-                // Legs extend back during kick
-                this.leftLeg.x = this.x - 8 - Math.max(0, breastKick) * 3;
-                this.rightLeg.x = this.x - 8 - Math.max(0, breastKick) * 3;
-                
-                // Feet angle outward during kick
-                this.leftFoot.y = this.y - 4 - legSeparation * 1.2;
-                this.rightFoot.y = this.y + 4 + legSeparation * 1.2;
-                this.leftFoot.x = this.x - 16 - Math.max(0, breastKick) * 2;
-                this.rightFoot.x = this.x - 16 - Math.max(0, breastKick) * 2;
-                
-                // Body undulation for breaststroke
-                this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 3) * 0.15;
-                break;
-                
-            case 'butterfly':
-                // Synchronized butterfly strokes - dramatic dolphin motion
-                const butterflyPhase = Math.sin(this.animFrame * Math.PI / 2.5) * (1 + intensity * 0.3);
-                const wingSpan = Math.abs(butterflyPhase) * 6;
-                
-                // Both arms move together in butterfly motion
-                this.leftArm.y = this.y - 7 + butterflyPhase * 4;
-                this.rightArm.y = this.y + 7 + butterflyPhase * 4;
-                
-                // Arms sweep forward and back together
-                this.leftArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
-                this.rightArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
-                
-                // Dramatic arm rotation for butterfly stroke
-                this.leftArm.rotation = butterflyPhase * 0.7;
-                this.rightArm.rotation = butterflyPhase * 0.7;
-                
-                // Arms extend during stroke
-                this.leftArm.width = 8 + wingSpan * 0.3;
-                this.rightArm.width = 8 + wingSpan * 0.3;
-                
-                // Dolphin kick - both legs move together in wave motion
-                const dolphinKick = Math.sin(this.animFrame * Math.PI / 2.5) * (3 + intensity);
-                
-                this.leftLeg.y = this.y - 4 + dolphinKick;
-                this.rightLeg.y = this.y + 4 + dolphinKick;
-                
-                // Legs undulate with body wave
-                this.leftLeg.x = this.x - 8 + Math.sin(this.animFrame * Math.PI / 2.5) * 2;
-                this.rightLeg.x = this.x - 8 + Math.sin(this.animFrame * Math.PI / 2.5) * 2;
-                
-                // Feet follow the dolphin wave motion
-                this.leftFoot.y = this.y - 4 + dolphinKick * 1.3;
-                this.rightFoot.y = this.y + 4 + dolphinKick * 1.3;
-                this.leftFoot.x = this.x - 16 + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
-                this.rightFoot.x = this.x - 16 + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
-                
-                // Enhanced body undulation - dolphin kick motion
-                this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 2.5) * 0.25;
-                this.body.rotation = Math.sin(this.animFrame * Math.PI / 2.5) * 0.1; // Body waves
-                
-                // Head bobs with dolphin motion (ensure head stays at front)
-                this.head.x = this.x + 12; // Keep head at front
-                this.head.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
-                this.cap.x = this.x + 14; // Cap follows head (front half)
-                this.cap.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 3;
-                break;
+                case 'butterfly':
+                    const butterflyPhase = Math.sin(this.animFrame * Math.PI / 2.5) * (1 + intensity * 0.3);
+                    const wingSpan = Math.abs(butterflyPhase) * 7;
+
+                    // Sideways arm movement (original Y, together) -> now screen X
+                    this.leftArm.x = this.x - 7 + butterflyPhase * 5;
+                    this.rightArm.x = this.x + 7 + butterflyPhase * 5;
+
+                    // Forward/backward arm sweep (original X, together) -> now screen Y (negative for forward)
+                    // Base position this.y + 6
+                    const armSweepY = Math.cos(this.animFrame * Math.PI / 2.5) * 6;
+                    this.leftArm.y = this.y + 6 - armSweepY;
+                    this.rightArm.y = this.y + 6 - armSweepY;
+
+                    this.leftArm.rotation = butterflyPhase * 0.8;
+                    this.rightArm.rotation = butterflyPhase * 0.8;
+                    this.leftArm.width = 8 + wingSpan * 0.4;
+                    this.rightArm.width = 8 + wingSpan * 0.4;
+
+                    const dolphinKick = Math.sin(this.animFrame * Math.PI / 2.5) * (4 + intensity * 1.2);
+                    // Sideways leg kick (original Y, together) -> now screen X
+                    this.leftLeg.x = this.x - 4 + dolphinKick;
+                    this.rightLeg.x = this.x + 4 + dolphinKick;
+
+                    // Forward/backward leg undulation (original X) -> now screen Y (negative for forward part of wave)
+                    // Base position this.y - 8
+                    const legUndulationY = Math.sin(this.animFrame * Math.PI / 2.5) * 3;
+                    this.leftLeg.y = this.y - 8 - legUndulationY;
+                    this.rightLeg.y = this.y - 8 - legUndulationY;
+
+                    // Feet follow legs
+                    this.leftFoot.x = this.x - 4 + dolphinKick * 1.3;
+                    this.rightFoot.x = this.x + 4 + dolphinKick * 1.3;
+                    const footUndulationY = Math.sin(this.animFrame * Math.PI / 2.5) * 4;
+                    this.leftFoot.y = this.y - 16 - footUndulationY; // Base this.y - 16
+                    this.rightFoot.y = this.y - 16 - footUndulationY;
+
+                    // Body undulation (original scaleY along length) -> now screen scaleX
+                    this.body.scaleX = 1.0 + Math.sin(this.animFrame * Math.PI / 2.5) * 0.3;
+                    this.body.scaleY = 1.0; // Reset
+                    this.body.rotation = Math.sin(this.animFrame * Math.PI / 2.5) * 0.15; // Roll
+
+                    // Head/Cap movement (original Y bobbing) -> now screen Y (forward/backward bobbing)
+                    // Base position this.y + 12 for head X in landscape -> this.y - 12 for head Y in portrait (forward)
+                    const headBobY = Math.sin(this.animFrame * Math.PI / 2.5) * 4;
+                    this.head.y = (this.y - 12) - headBobY; // Swimmer's Y is center, head is 'ahead' (screen Y decreases)
+                    this.cap.y = (this.y - 12) - headBobY; // Cap moves with head
+                    // Head X is fixed relative to swimmer's X (center of lane)
+                    this.head.x = this.x;
+                    this.cap.x = this.x + 2; // Cap slightly offset on X if needed, or this.x
+
+                    break;
+            }
+        } else {
+            // Landscape Mode Animations (Original Logic)
+            switch (this.strokeType) {
+                case 'freestyle':
+                    // Alternating arm strokes with reach and pull
+                    const freestylePhase = Math.sin(this.animFrame * Math.PI / 4);
+                    const armReach = freestylePhase * (5 + intensity * 1.5); // Increased arm extension
+
+                    // Alternating arm movements (arms positioned correctly for forward-facing)
+                    this.leftArm.y = this.y - 7 + armReach;
+                    this.rightArm.y = this.y + 7 - armReach;
+
+                    // Arms extend forward during reach phase (toward finish line)
+                    this.leftArm.x = this.x + 6 + Math.max(0, freestylePhase) * 5; // Emphasized pull phase
+                    this.rightArm.x = this.x + 6 + Math.max(0, -freestylePhase) * 5; // Emphasized pull phase
+
+                    // Enhanced arm rotation for stroke motion
+                    this.leftArm.rotation = freestylePhase * 0.5; // Increased arm rotation
+                    this.rightArm.rotation = -freestylePhase * 0.5; // Increased arm rotation
+
+                    // Flutter kick - alternating leg movements
+                    const legKick = Math.sin(this.animFrame * Math.PI / 2) * (3 + intensity * 1.2); // Strengthened leg kick
+                    this.leftLeg.y = this.y - 4 + legKick;
+                    this.rightLeg.y = this.y + 4 - legKick;
+
+                    // Feet follow legs with slight delay
+                    this.leftFoot.y = this.y - 4 + legKick * 0.8;
+                    this.rightFoot.y = this.y + 4 - legKick * 0.8;
+
+                    // Slight body roll for freestyle
+                    this.body.rotation = freestylePhase * 0.08; // Slightly more body roll
+                    break;
+
+                case 'backstroke':
+                    // Backward alternating strokes - arms reach back over head
+                    const backstrokePhase = Math.cos(this.animFrame * Math.PI / 4);
+                    const backstrokeOffset = backstrokePhase * (7 + intensity * 1.2); // Increased Arm Recovery Height/Reach
+
+                    this.leftArm.y = this.y - 7 + backstrokeOffset;
+                    this.rightArm.y = this.y + 7 - backstrokeOffset;
+
+                    // Arms rotate more dramatically for backstroke windmill motion
+                    this.leftArm.rotation = backstrokePhase * 0.7; // Emphasize Arm Rotation
+                    this.rightArm.rotation = -backstrokePhase * 0.7; // Emphasize Arm Rotation
+
+                    // Arms extend back over head for backstroke (but swimmer is now oriented forward)
+                    // Refined Arm Extension (X-axis) for alternation
+                    this.leftArm.x = this.x + 6 + (backstrokePhase > 0 ? Math.abs(backstrokePhase) * 5 : Math.abs(backstrokePhase) * 3);
+                    this.rightArm.x = this.x + 6 + (backstrokePhase < 0 ? Math.abs(backstrokePhase) * 5 : Math.abs(backstrokePhase) * 3);
+
+                    // Flutter kick for backstroke (similar to freestyle but on back)
+                    const backKick = Math.sin(this.animFrame * Math.PI / 2) * (3 + intensity * 1.1); // Strengthened Leg Kick
+                    this.leftLeg.y = this.y - 4 + backKick;
+                    this.rightLeg.y = this.y + 4 - backKick;
+
+                    // Feet follow legs
+                    this.leftFoot.y = this.y - 4 + backKick * 0.8;
+                    this.rightFoot.y = this.y + 4 - backKick * 0.8;
+
+                    // Keep swimmer face up color
+                    this.head.setFillStyle(0xffeedd);
+                    break;
+
+                case 'breaststroke':
+                    // Synchronized wide arm movements - arms sweep out and in
+                    const breastPhase = Math.sin(this.animFrame * Math.PI / 3) * (1 + intensity * 0.5);
+                    const armSweep = Math.abs(breastPhase) * 10; // Wider Arm Sweep
+
+                    // Arms move out and in synchronously
+                    this.leftArm.y = this.y - 7 - armSweep;
+                    this.rightArm.y = this.y + 7 + armSweep;
+
+                    // Arms extend forward and pull back
+                    this.leftArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 3) * 5; // More Pronounced Arm Forward Extension/Pull
+                    this.rightArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 3) * 5; // More Pronounced Arm Forward Extension/Pull
+
+                    // Arms get wider during sweep
+                    this.leftArm.width = 8 + armSweep * 0.6; // Increase Arm Width Change
+                    this.rightArm.width = 8 + armSweep * 0.6; // Increase Arm Width Change
+
+                    // Slight rotation for sweep motion
+                    this.leftArm.rotation = breastPhase * 0.3;
+                    this.rightArm.rotation = -breastPhase * 0.3;
+
+                    // Breaststroke kick - legs come together and kick out
+                    const breastKick = Math.sin(this.animFrame * Math.PI / 3); // Name kept as breastKick for landscape
+                    const legSeparation = Math.abs(breastKick) * 4; // Stronger Leg Kick Separation
+
+                    this.leftLeg.y = this.y - 4 - legSeparation;
+                    this.rightLeg.y = this.y + 4 + legSeparation;
+
+                    // Legs extend back during kick
+                    this.leftLeg.x = this.x - 8 - Math.max(0, breastKick) * 4; // More Powerful Leg Propulsion (X-axis)
+                    this.rightLeg.x = this.x - 8 - Math.max(0, breastKick) * 4; // More Powerful Leg Propulsion (X-axis)
+
+                    // Feet angle outward during kick
+                    this.leftFoot.y = this.y - 4 - legSeparation * 1.3; // Refine Foot Movement Y
+                    this.rightFoot.y = this.y + 4 + legSeparation * 1.3; // Refine Foot Movement Y
+                    this.leftFoot.x = this.x - 16 - Math.max(0, breastKick) * 3; // Refine Foot Movement X
+                    this.rightFoot.x = this.x - 16 - Math.max(0, breastKick) * 3; // Refine Foot Movement X
+
+                    // Body undulation for breaststroke
+                    this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 3) * 0.2; // More Noticeable Body Undulation
+                    break;
+
+                case 'butterfly':
+                    // Synchronized butterfly strokes - dramatic dolphin motion
+                    const butterflyPhase = Math.sin(this.animFrame * Math.PI / 2.5) * (1 + intensity * 0.3);
+                    const wingSpan = Math.abs(butterflyPhase) * 7; // Increase Arm "Wing Span"
+
+                    // Both arms move together in butterfly motion
+                    this.leftArm.y = this.y - 7 + butterflyPhase * 5; // More Powerful Arm Pull (Y-axis movement)
+                    this.rightArm.y = this.y + 7 + butterflyPhase * 5; // More Powerful Arm Pull (Y-axis movement)
+
+                    // Arms sweep forward and back together
+                    this.leftArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
+                    this.rightArm.x = this.x + 6 + Math.cos(this.animFrame * Math.PI / 2.5) * 6;
+
+                    // Dramatic arm rotation for butterfly stroke
+                    this.leftArm.rotation = butterflyPhase * 0.8; // More Dramatic Arm Rotation
+                    this.rightArm.rotation = butterflyPhase * 0.8; // More Dramatic Arm Rotation
+
+                    // Arms extend during stroke
+                    this.leftArm.width = 8 + wingSpan * 0.4; // Increase Arm Width Change during Stroke
+                    this.rightArm.width = 8 + wingSpan * 0.4; // Increase Arm Width Change during Stroke
+
+                    // Dolphin kick - both legs move together in wave motion
+                    const dolphinKick = Math.sin(this.animFrame * Math.PI / 2.5) * (4 + intensity * 1.2); // Strengthen Dolphin Kick
+
+                    this.leftLeg.y = this.y - 4 + dolphinKick;
+                    this.rightLeg.y = this.y + 4 + dolphinKick;
+
+                    // Legs undulate with body wave
+                    this.leftLeg.x = this.x - 8 + Math.sin(this.animFrame * Math.PI / 2.5) * 3; // Refine Leg X-axis Movement
+                    this.rightLeg.x = this.x - 8 + Math.sin(this.animFrame * Math.PI / 2.5) * 3; // Refine Leg X-axis Movement
+
+                    // Feet follow the dolphin wave motion
+                    this.leftFoot.y = this.y - 4 + dolphinKick * 1.3;
+                    this.rightFoot.y = this.y + 4 + dolphinKick * 1.3;
+                    this.leftFoot.x = this.x - 16 + Math.sin(this.animFrame * Math.PI / 2.5) * 4; // Refine Foot X-axis Movement
+                    this.rightFoot.x = this.x - 16 + Math.sin(this.animFrame * Math.PI / 2.5) * 4; // Refine Foot X-axis Movement
+
+                    // Enhanced body undulation - dolphin kick motion
+                    this.body.scaleY = 1.0 + Math.sin(this.animFrame * Math.PI / 2.5) * 0.3; // Enhance Body Undulation (scaleY)
+                    this.body.rotation = Math.sin(this.animFrame * Math.PI / 2.5) * 0.15; // Enhance Body Undulation (rotation)
+
+                    // Head bobs with dolphin motion (ensure head stays at front)
+                    this.head.x = this.x + 12; // Keep head at front
+                    this.head.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 4; // Amplify Head/Cap Movement
+                    this.cap.x = this.x + 14; // Cap follows head (front half)
+                    this.cap.y = this.y + Math.sin(this.animFrame * Math.PI / 2.5) * 4; // Amplify Head/Cap Movement
+                    break;
+            }
         }
     }
     
