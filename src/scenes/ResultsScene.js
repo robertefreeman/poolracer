@@ -77,143 +77,91 @@ export default class ResultsScene extends Phaser.Scene {
 
     displayResults() {
         const width = this.cameras.main.width;
-        const startY = 180; // Moved down to accommodate Head Timer text
+        const height = this.cameras.main.height; // Now 1280
+        let currentY = 180; // Initial Y position for the first result block, below "Final Times" title
 
-        this.add.text(width / 2, startY - 30, 'Final Times:', {
-            font: 'bold 20px Arial',
+        // "Final Times:" title (can keep this or similar)
+        this.add.text(width / 2, currentY - 40, 'Final Times:', { // Adjusted Y for title
+            font: 'bold 24px Arial', // Slightly larger title
             fill: '#ffffff'
         }).setOrigin(0.5);
 
-        // Center the table - calculate positions relative to center
-        const centerX = width / 2;
-        const placeX = centerX - 280; // New
-        const nameX = centerX - 170;  // New (for Name column)
-        const teamX = centerX - 60;   // New (for Team column)
-        const timeX = centerX + 50;   // New
-        const strokesX = centerX + 150; // New
-        const statsX = centerX + 250;  // New
-
-        // Create table headers
-        this.add.text(placeX, startY - 5, 'Place', {
-            font: 'bold 14px Arial',
-            fill: '#aaaaaa'
-        }).setOrigin(0.5);
-
-        this.add.text(nameX, startY - 5, 'Name', {
-            font: 'bold 14px Arial',
-            fill: '#aaaaaa'
-        }).setOrigin(0.5);
-
-        this.add.text(teamX, startY - 5, 'Team', {
-            font: 'bold 14px Arial',
-            fill: '#aaaaaa'
-        }).setOrigin(0.5);
-
-        this.add.text(timeX, startY - 5, 'Time', {
-            font: 'bold 14px Arial',
-            fill: '#aaaaaa'
-        }).setOrigin(0.5);
-
-        this.add.text(strokesX, startY - 5, 'Strokes', {
-            font: 'bold 14px Arial',
-            fill: '#aaaaaa'
-        }).setOrigin(0.5);
-
-        this.add.text(statsX, startY - 5, 'Stats', {
-            font: 'bold 14px Arial',
-            fill: '#aaaaaa'
-        }).setOrigin(0.5);
+        const textStartX = width * 0.1; // Left margin for text
+        const valueOffsetX = width * 0.35; // Indent for values, relative to textStartX
+        const labelStyle = { font: '18px Arial', fill: '#aaaaaa' };
+        const valueStyleBase = { font: 'bold 18px Arial', fill: '#ffffff' };
+        const lineSpacing = 28; // Space between lines within a block
+        const blockSpacing = 40; // Space between player result blocks
 
         this.results.forEach((result, index) => {
-            const y = startY + 25 + (index * 50); // Increased spacing to 50px
             const isPlayer = result.swimmer.isPlayer;
             const isDisqualified = isPlayer && result.swimmer.missTapCount > 2;
-            
-            // Place - show DQ if disqualified
+
+            // --- Place ---
             let placeText;
-            let placeColor;
+            let placeColor = isPlayer ? '#ffff00' : '#ffffff';
             if (isDisqualified) {
                 placeText = 'DQ';
                 placeColor = '#ff0000';
             } else {
                 placeText = this.getPlaceText(result.place);
-                placeColor = isPlayer ? '#ffff00' : '#ffffff';
             }
-            
-            this.add.text(placeX, y, placeText, {
-                font: 'bold 18px Arial',
-                fill: placeColor
-            }).setOrigin(0.5);
+            this.add.text(textStartX, currentY, 'Place:', labelStyle);
+            this.add.text(textStartX + valueOffsetX, currentY, placeText, { ...valueStyleBase, fill: placeColor });
+            currentY += lineSpacing;
 
-            // Name display
+            // --- Name ---
             let displayName;
-            let nameColor = isPlayer ? '#ffff00' : '#cccccc'; // Default color
-
+            let nameColor = isPlayer ? '#ffff00' : (isDisqualified ? '#ff6666' : '#cccccc');
             if (isPlayer) {
                 displayName = this.playerName;
             } else {
-                // Using result.swimmer.lane, which is 0-indexed. Adding 1 for display.
                 displayName = `Swimmer ${result.swimmer.lane + 1}`;
             }
+            this.add.text(textStartX, currentY, 'Name:', labelStyle);
+            this.add.text(textStartX + valueOffsetX, currentY, displayName, { ...valueStyleBase, fill: nameColor });
+            currentY += lineSpacing;
 
-            this.add.text(nameX, y, displayName, {
-                font: '16px Arial',
-                fill: nameColor
-            }).setOrigin(0.5);
-
-            // Team display (based on lane)
+            // --- Team ---
             const teamNameStr = this.getShortTeamName(result.swimmer.lane);
-            this.add.text(teamX, y, teamNameStr, {
-                font: '16px Arial',
-                fill: isPlayer ? '#ffff00' : '#cccccc'
-            }).setOrigin(0.5);
+            const teamColor = isPlayer ? '#ffff00' : '#cccccc';
+            this.add.text(textStartX, currentY, 'Team:', labelStyle);
+            this.add.text(textStartX + valueOffsetX, currentY, teamNameStr, { ...valueStyleBase, fill: teamColor });
+            currentY += lineSpacing;
 
-            // Time - show with strikethrough if DQ
-            const timeText = `${result.time.toFixed(2)}s`;
-            const timeElement = this.add.text(timeX, y, timeText, {
-                font: '18px Arial',
-                fill: isDisqualified ? '#ff6666' : (isPlayer ? '#ffff00' : '#ffffff')
-            }).setOrigin(0.5);
-            
-            // Add strikethrough for DQ times
+            // --- Time ---
+            const timeTextStr = `${result.time.toFixed(2)}s`;
+            const timeColor = isDisqualified ? '#ff6666' : (isPlayer ? '#ffff00' : '#ffffff');
+            this.add.text(textStartX, currentY, 'Time:', labelStyle);
+            const timeValueText = this.add.text(textStartX + valueOffsetX, currentY, timeTextStr, { ...valueStyleBase, fill: timeColor });
             if (isDisqualified) {
-                this.add.line(timeX, y, -timeText.length * 5, 0, timeText.length * 5, 0, 0xff0000)
-                    .setLineWidth(2);
+                // Add strikethrough for DQ time: X relative to the timeValueText's X
+                this.add.line(0, 0, timeValueText.x - (timeValueText.width/2) + 5, timeValueText.y + (timeValueText.height/2) -2, timeValueText.x + (timeValueText.width/2) -5 , timeValueText.y+(timeValueText.height/2)-2, 0xff0000, 2).setOrigin(0,0);
             }
+            currentY += lineSpacing;
 
-            // Stroke count
-            this.add.text(strokesX, y, `${result.swimmer.strokeCount}`, {
-                font: '16px Arial',
-                fill: '#aaaaaa'
-            }).setOrigin(0.5);
+            // --- Strokes ---
+            this.add.text(textStartX, currentY, 'Strokes:', labelStyle);
+            this.add.text(textStartX + valueOffsetX, currentY, `${result.swimmer.strokeCount}`, { ...valueStyleBase, fill: '#aaaaaa' });
+            currentY += lineSpacing;
 
-            // Player indicator and stats
+            // --- Player Specific Stats (Accuracy / Misses) ---
             if (isPlayer) {
                 if (isDisqualified) {
-                    this.add.text(statsX, y - 10, '(YOU)', {
-                        font: 'bold 14px Arial',
-                        fill: '#ff0000'
-                    }).setOrigin(0.5);
-                    
-                    this.add.text(statsX, y + 8, `${result.swimmer.missTapCount} misses`, {
-                        font: '12px Arial',
-                        fill: '#ff0000'
-                    }).setOrigin(0.5);
+                    this.add.text(textStartX, currentY, 'Reason:', labelStyle);
+                    this.add.text(textStartX + valueOffsetX, currentY, `${result.swimmer.missTapCount} misses`, { ...valueStyleBase, fill: '#ff0000' });
                 } else {
-                    this.add.text(statsX, y - 10, '(YOU)', {
-                        font: 'bold 14px Arial',
-                        fill: '#ff6b35'
-                    }).setOrigin(0.5);
-                    
-                    const accuracy = result.swimmer.totalTapCount > 0 ? 
+                    const accuracy = result.swimmer.totalTapCount > 0 ?
                         ((result.swimmer.totalTapCount - result.swimmer.missTapCount) / result.swimmer.totalTapCount * 100) : 100;
-                    
-                    this.add.text(statsX, y + 8, `${accuracy.toFixed(0)}% acc`, {
-                        font: '12px Arial',
-                        fill: accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000'
-                    }).setOrigin(0.5);
+                    const accuracyColor = accuracy >= 90 ? '#00ff00' : accuracy >= 75 ? '#ffff00' : '#ff0000';
+                    this.add.text(textStartX, currentY, 'Accuracy:', labelStyle);
+                    this.add.text(textStartX + valueOffsetX, currentY, `${accuracy.toFixed(0)}%`, { ...valueStyleBase, fill: accuracyColor });
                 }
+                currentY += lineSpacing;
             }
+
+            // Add a visual separator or just space for the next block
+            currentY += blockSpacing - lineSpacing; // Spacing before next swimmer block
         });
     }
 

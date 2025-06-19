@@ -99,24 +99,30 @@ export default class HighScoreScene extends Phaser.Scene {
             strokeThickness: 2
         }).setOrigin(0.5);
 
+        // Define X coordinates for columns
+        const rankX = width * 0.15;
+        const nameX = width * 0.38;
+        const timeX = width * 0.65;
+        const dateX = width * 0.85;
+
         // Column headers
         const headerY = 220;
-        this.add.text(width / 2 - 200, headerY, 'RANK', {
+        this.add.text(rankX, headerY, 'RANK', {
             font: 'bold 16px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
 
-        this.add.text(width / 2 - 50, headerY, 'NAME', {
+        this.add.text(nameX, headerY, 'NAME', {
             font: 'bold 16px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
 
-        this.add.text(width / 2 + 100, headerY, 'TIME', {
+        this.add.text(timeX, headerY, 'TIME', {
             font: 'bold 16px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
 
-        this.add.text(width / 2 + 200, headerY, 'DATE', {
+        this.add.text(dateX, headerY, 'DATE', {
             font: 'bold 16px Arial',
             fill: '#ffffff'
         }).setOrigin(0.5);
@@ -140,25 +146,25 @@ export default class HighScoreScene extends Phaser.Scene {
                 else if (rank === 3) rankColor = '#cd7f32'; // Bronze
 
                 // Rank
-                this.add.text(width / 2 - 200, y, `${rank}.`, {
+                this.add.text(rankX, y, `${rank}.`, {
                     font: 'bold 16px Arial',
                     fill: rankColor
                 }).setOrigin(0.5);
 
                 // Name
-                this.add.text(width / 2 - 50, y, score.name, {
+                this.add.text(nameX, y, score.name, {
                     font: '16px Arial',
                     fill: '#ffffff'
                 }).setOrigin(0.5);
 
                 // Time
-                this.add.text(width / 2 + 100, y, highScoreManager.constructor.formatTime(score.time), {
+                this.add.text(timeX, y, highScoreManager.constructor.formatTime(score.time), {
                     font: '16px Arial',
                     fill: rank <= 3 ? rankColor : '#ffffff'
                 }).setOrigin(0.5);
 
                 // Date
-                this.add.text(width / 2 + 200, y, score.date, {
+                this.add.text(dateX, y, score.date, {
                     font: '14px Arial',
                     fill: '#cccccc'
                 }).setOrigin(0.5);
