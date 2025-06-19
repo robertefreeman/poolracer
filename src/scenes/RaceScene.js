@@ -13,13 +13,16 @@ export default class RaceScene extends Phaser.Scene {
     }
 
     create() {
-        const raceDistanceMeters = 25; // 25-meter race
-        const pixelsPerMeter = 100;    // Each meter is 100 pixels long
-        this.poolWorldLength = raceDistanceMeters * pixelsPerMeter; // Total scrollable length
+        this.displayedRaceDistanceMeters = 25;
+        const actualRaceDistanceFactor = 10; // Makes the race 10x longer
+        this.actualRaceDistanceMeters = this.displayedRaceDistanceMeters * actualRaceDistanceFactor;
 
-        // Make these available to swimmers
-        this.raceDistanceMeters = raceDistanceMeters;
-        this.pixelsPerMeter = pixelsPerMeter;
+        this.pixelsPerMeter = 100; // Pixels per one actual meter
+
+        // This is the property Swimmer.js currently uses for finish condition via this.scene.raceDistanceMeters
+        this.raceDistanceMeters = this.actualRaceDistanceMeters;
+
+        this.poolWorldLength = this.actualRaceDistanceMeters * this.pixelsPerMeter;
 
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
@@ -107,7 +110,7 @@ export default class RaceScene extends Phaser.Scene {
         // Halfway marker
         const halfwayY = this.poolWorldLength / 2;
         this.add.rectangle(width / 2, halfwayY, width, 2, 0xcccccc);
-        this.add.text(width / 2 + 10, halfwayY, `${this.raceDistanceMeters / 2}m`, {
+        this.add.text(width / 2 + 10, halfwayY, `${this.displayedRaceDistanceMeters / 2}m`, {
             font: '12px Arial',
             fill: '#ffffff',
             stroke: '#000000',
